@@ -1,32 +1,39 @@
 import React, { Fragment } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import DashboardPage from "./pages/admin/DashboardPage/DashboardPage";
 import { routes } from "./routes";
-import DefaultComponent from "./components/Admin/DefaultComponent/DefaultComponent";
+import DefaultComponent from "./components/Admin/DefaultComponent/AdminDefaultComponent";
+import StaffDefaultComponent from "./components/Staff/DefaultComponent/StaffDefaultComponent";
 
 function App() {
   return (
-    <div>
-      <Router>
-        <Routes>
-          {routes.map((route) => {
-            const Page = route.page;
-            const Layout = route.isShowMenuBar ? DefaultComponent : Fragment;
-            return (
-              <Route
-                key={route.path}
-                path={route.path}
-                element={
-                  <Layout>
-                    <Page />
-                  </Layout>
-                }
-              ></Route>
-            );
-          })}
-        </Routes>
-      </Router>
-    </div>
+    <Router>
+      <Routes>
+        {routes.map((route) => {
+          const Page = route.page;
+
+          // 🧩 Xác định layout hiển thị
+          let Layout = Fragment; // Mặc định: không layout (dành cho login, not found,...)
+
+          if (route.isShowMenuBarAdmin) {
+            Layout = DefaultComponent;
+          } else if (route.isShowMenuBarStaff) {
+            Layout = StaffDefaultComponent;
+          }
+
+          return (
+            <Route
+              key={route.path}
+              path={route.path}
+              element={
+                <Layout>
+                  <Page />
+                </Layout>
+              }
+            />
+          );
+        })}
+      </Routes>
+    </Router>
   );
 }
 

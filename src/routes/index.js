@@ -17,65 +17,70 @@ export const routes = [
   {
     path: "/login",
     page: LoginPage,
-    isShowMenuBar: false,
+    isShowMenuBarAdmin: false,
   },
   // ADMIN ROUTES
   {
     path: "/admin",
     page: DashboardPage, // Trang tổng quan
-    isShowMenuBar: true,
+    isShowMenuBarAdmin: true,
   },
   {
     path: "/admin/packages",
     page: MembershipPackage, // Quản lý gói tập
-    isShowMenuBar: true,
+    isShowMenuBarAdmin: true,
   },
   {
     path: "/admin/trainers",
     page: TrainersPage, // Quản lý huấn luyện viên
-    isShowMenuBar: true,
+    isShowMenuBarAdmin: true,
   },
   {
     path: "/admin/transactions",
     page: TransactionsPage, // Theo dõi giao dịch
-    isShowMenuBar: true,
+    isShowMenuBarAdmin: true,
   },
   {
     path: "/admin/reports",
     page: ReportsPage, // Báo cáo tổng hợp
-    isShowMenuBar: true,
+    isShowMenuBarAdmin: true,
   },
   {
     path: "/admin/staffs",
     page: StaffsPage, // Quản lý nhân viên
-    isShowMenuBar: true,
+    isShowMenuBarAdmin: true,
   },
   {
     path: "/admin/logout",
     page: LogoutPage, // Đăng xuất
-    isShowMenuBar: true,
+    isShowMenuBarAdmin: true,
   },
 
   // STAFF ROUTES
   {
     path: "/staff",
     page: StaffDashboardPage, // Trang tổng quan nhân viên (có thể là danh sách hội viên)
+    isShowMenuBarStaff: true,
   },
   {
     path: "/staff/members",
     page: MembersPage, // Xem hội viên
+    isShowMenuBarStaff: true,
   },
   {
     path: "/staff/packages",
     page: UpdatePackagePage, // Cập nhật gói tập / xác nhận thanh toán
+    isShowMenuBarStaff: true,
   },
   {
     path: "/staff/checkins",
     page: CheckInLogsPage, // Quản lý check-in
+    isShowMenuBarStaff: true,
   },
   {
     path: "/staff/schedules",
     page: SchedulePage, // Cập nhật lịch tập
+    isShowMenuBarStaff: true,
   },
   {
     path: "/staff/logout",
