@@ -15,7 +15,7 @@ import NotFoundPage from "../pages/NotFoundPage/NotFoundPage";
 
 export const routes = [
   {
-    path: "/login",
+    path: "/",
     page: LoginPage,
     isShowMenuBarAdmin: false,
   },
