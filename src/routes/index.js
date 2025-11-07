@@ -8,10 +8,11 @@ import TransactionsPage from "../pages/admin/TransactionsPage/TransactionsPage";
 import LoginPage from "../pages/Login_SignUp/LoginPage";
 import StaffDashboardPage from "../pages/staff/StaffDashboardPage/StaffDashboardPage";
 import UpdatePackagePage from "../pages/staff/UpdatePackagePage/UpdatePackagePage";
-import LogoutPage from "../pages/Login_SignUp/LogoutPage";
 import ReportsPage from "../pages/admin/ReportsPage/ReportsPage";
 import StaffsPage from "../pages/admin/StaffsPage/StaffsPage";
 import NotFoundPage from "../pages/NotFoundPage/NotFoundPage";
+import ForgotPasswordPage from "../pages/Login_SignUp/ForgotPasswordPage";
+import ResetPasswordPage from "../pages/Login_SignUp/ResetPasswordPage";
 
 export const routes = [
   {
@@ -19,6 +20,19 @@ export const routes = [
     page: LoginPage,
     isShowMenuBarAdmin: false,
   },
+
+  {
+    path: "/ForgotPassword",
+    page: ForgotPasswordPage,
+    isShowMenuBarAdmin: false,
+  },
+
+  {
+    path: "/ResetPassword/:token",
+    page: ResetPasswordPage,
+    isShowMenuBarAdmin: false,
+  },
+
   // ADMIN ROUTES
   {
     path: "/admin",
@@ -50,11 +64,6 @@ export const routes = [
     page: StaffsPage, // Quản lý nhân viên
     isShowMenuBarAdmin: true,
   },
-  {
-    path: "/admin/logout",
-    page: LogoutPage, // Đăng xuất
-    isShowMenuBarAdmin: true,
-  },
 
   // STAFF ROUTES
   {
@@ -81,10 +90,6 @@ export const routes = [
     path: "/staff/schedules",
     page: SchedulePage, // Cập nhật lịch tập
     isShowMenuBarStaff: true,
-  },
-  {
-    path: "/staff/logout",
-    page: LogoutPage, // Đăng xuất
   },
   {
     path: "*",

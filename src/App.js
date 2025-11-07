@@ -4,30 +4,54 @@ import { routes } from "./routes";
 import DefaultComponent from "./components/Admin/DefaultComponent/AdminDefaultComponent";
 import StaffDefaultComponent from "./components/Staff/DefaultComponent/StaffDefaultComponent";
 import axios from "axios";
-import { useQuery } from "@tanstack/react-query";
+import { jwtDecode } from "jwt-decode";
+import { useDispatch } from "react-redux";
+import * as UserService from "./services/Admin/UserService";
+import { updateUser } from "./redux/slides/userSlice";
+import { isJsonString } from "./utils/utils";
 
 function App() {
-  // useEffect(() => {
-  //   fetchApi();
-  // }, []);
+  const dispatch = useDispatch();
+  useEffect(() => {
+    const { storageData, decoded } = handleDecoded();
+    if (decoded?.id) {
+      handleGetDetailsUser(decoded?.id, storageData);
+    }
+  }, []);
 
-  console.log(
-    "process.env.REACT_APP_API_URL_BACKEND",
-    process.env.REACT_APP_API_URL_BACKEND
-  );
-
-  const fetchApi = async () => {
-    const res = await axios.get(
-      `${process.env.REACT_APP_API_URL_BACKEND}/user/get-all-users`
-    );
-
-    return res.data;
+  const handleDecoded = () => {
+    let storageData = localStorage.getItem("accessToken");
+    let decoded = {};
+    if (storageData && isJsonString(storageData)) {
+      storageData = JSON.parse(storageData);
+      decoded = jwtDecode(storageData);
+    }
+    return { decoded, storageData };
   };
 
-  // Queries
-  const query = useQuery({ queryKey: ["todos"], queryFn: fetchApi });
+  UserService.axiosJWT.interceptors.request.use(
+    async function (config) {
+      const currentTime = new Date();
+      const { storageData, decoded } = handleDecoded();
 
-  console.log("query", query);
+      if (decoded?.exp < currentTime.getTime() / 1000) {
+        const data = await UserService.refreshToken();
+        config.headers["token"] = `Bearer ${data?.access_Token}`;
+      }
+      // Do something before request is sent
+      return config;
+    },
+    function (error) {
+      // Do something with request error
+      return Promise.reject(error);
+    }
+  );
+
+  const handleGetDetailsUser = async (id, token) => {
+    const resGetDetails = await UserService.getDetailsUser(id, token);
+    dispatch(updateUser({ ...resGetDetails?.data, access_Token: token }));
+  };
+
   return (
     <Router>
       <Routes>
@@ -35,7 +59,6 @@ function App() {
           const Page = route.page;
 
           let Layout = Fragment;
-
           if (route.isShowMenuBarAdmin) {
             Layout = DefaultComponent;
           } else if (route.isShowMenuBarStaff) {

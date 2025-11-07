@@ -12,6 +12,9 @@ import { Button, Layout, Menu } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 import logoTrang from "../../../assets/images/logo/logo_trang.png";
 import { StyledMenu } from "./styleDefaultComponent";
+import { useDispatch, useSelector } from "react-redux";
+import * as UserService from "../../../services/Admin/UserService";
+import { resetUser } from "../../../redux/slides/userSlice";
 
 const { Header, Sider, Content } = Layout;
 
@@ -19,6 +22,16 @@ const DefaultComponent = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user);
+
+  const handleLogout = async () => {
+    await UserService.logoutUser();
+    dispatch(resetUser());
+    navigate("/");
+    // localStorage.removeItem("accessToken");
+    // navigate("/login");
+  };
 
   const menuItems = [
     { key: "/admin", icon: <DashboardOutlined />, label: "Tổng quan" },
@@ -37,10 +50,17 @@ const DefaultComponent = ({ children }) => {
       icon: <UserOutlined />,
       label: "Quản lý nhân viên",
     },
-    { key: "/admin/logout", icon: <LogoutOutlined />, label: "Đăng xuất" },
+    { key: "logout", icon: <LogoutOutlined />, label: "Đăng xuất" },
   ];
 
-  const handleMenuClick = (e) => navigate(e.key);
+  const handleMenuClick = async (e) => {
+    // e.domEvent.preventDefault();
+    if (e.key === "logout") {
+      await handleLogout();
+    } else {
+      navigate(e.key);
+    }
+  };
 
   return (
     // Layout cha bao toàn bộ trang
@@ -87,6 +107,8 @@ const DefaultComponent = ({ children }) => {
           />
           <h2 style={{ margin: 0, color: "#FFFFFF" }}>Quản lý phòng tập GYM</h2>
         </div>
+
+        {user?.fullName ? <div>{user.fullName}</div> : <div>Tài khoản</div>}
       </Header>
 
       {/* Layout chính: Sidebar + Content */}

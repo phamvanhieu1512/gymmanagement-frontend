@@ -1,31 +1,79 @@
-import React from "react";
-import { Form, Input, Typography } from "antd";
+import React, { useEffect } from "react";
+import { Form, Input, Typography, message } from "antd";
 import logoTrang from "../../assets/images/logo/logo_den.png";
 import {
   LoginContainer,
   LoginCard,
   Logo,
   StyledButton,
-  FooterText,
 } from "./styleLogin_SignUp";
-import { Link } from "react-router";
+import { useNavigate } from "react-router-dom";
+import * as UserService from "../../services/Admin/UserService";
+import { useMutationHook } from "../../hooks/useMutationHook";
+import { jwtDecode } from "jwt-decode";
+import { useDispatch } from "react-redux";
+import { updateUser } from "../../redux/slides/userSlice";
+
 const { Title, Text } = Typography;
 
 const LoginPage = () => {
+  const navigate = useNavigate();
+  const [messageApi, contextHolder] = message.useMessage();
+  const dispatch = useDispatch();
+
+  const mutation = useMutationHook((data) => UserService.loginUser(data));
+  const { data, isError, isSuccess, error, isLoading } = mutation;
+
+  useEffect(() => {
+    if (isSuccess) {
+      if (data?.status === "OK") {
+        messageApi.success(data?.message || "Đăng nhập thành công!");
+
+        localStorage.setItem("accessToken", JSON.stringify(data?.access_Token));
+
+        if (data?.access_Token) {
+          const decoded = jwtDecode(data?.access_Token);
+          if (decoded?.id) {
+            handleGetDetailsUser(decoded?.id, data?.access_Token);
+          }
+
+          if (decoded?.role === "admin") {
+            navigate("/admin");
+          } else if (decoded?.role === "staff") {
+            navigate("/staff");
+          } else {
+            navigate("/");
+          }
+        }
+      } else if (data?.status === "ERROR") {
+        messageApi.error(data?.message || "Đăng nhập thất bại!");
+      }
+    }
+
+    if (isError) {
+      messageApi.error(error?.response?.data?.message || "Lỗi hệ thống!");
+    }
+  }, [isSuccess, isError, data, error, messageApi, navigate]);
+
+  const handleGetDetailsUser = async (id, token) => {
+    const resGetDetails = await UserService.getDetailsUser(id, token);
+    dispatch(updateUser({ ...resGetDetails?.data, access_Token: token }));
+  };
+
   const onFinish = (values) => {
-    console.log("Login info:", values);
+    mutation.mutate({
+      email: values.email,
+      passwordHash: values.password,
+    });
   };
 
   const handleForgotPassword = () => {
-    alert("Chức năng quên mật khẩu sẽ được thêm sau.");
-  };
-
-  const handleRegister = () => {
-    alert("Chức năng đăng ký sẽ được thêm sau.");
+    navigate("/ForgotPassword");
   };
 
   return (
     <LoginContainer>
+      {contextHolder}
       <LoginCard>
         <Logo src={logoTrang} alt="Gym Logo" />
         <Title level={3} style={{ color: "#B22222" }}>
@@ -42,7 +90,10 @@ const LoginPage = () => {
           <Form.Item
             label="Email"
             name="email"
-            rules={[{ required: true, message: "Vui lòng nhập email!" }]}
+            rules={[
+              { required: true, message: "Vui lòng nhập email!" },
+              { type: "email", message: "Email không hợp lệ!" },
+            ]}
           >
             <Input placeholder="Nhập email" />
           </Form.Item>
@@ -56,25 +107,24 @@ const LoginPage = () => {
           </Form.Item>
 
           <div style={{ textAlign: "right", marginBottom: 16 }}>
-            <Link
+            <div
               onClick={handleForgotPassword}
-              style={{ color: "#B22222", fontWeight: 500 }}
+              style={{
+                color: "#B22222",
+                fontWeight: 500,
+                cursor: "pointer",
+              }}
             >
               Quên mật khẩu?
-            </Link>
+            </div>
           </div>
 
           <Form.Item>
-            <StyledButton htmlType="submit">Đăng nhập</StyledButton>
+            <StyledButton htmlType="submit" disabled={isLoading}>
+              {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
+            </StyledButton>
           </Form.Item>
         </Form>
-
-        <FooterText>
-          Bạn chưa có tài khoản?{" "}
-          <Link onClick={handleRegister} style={{ color: "#B22222" }}>
-            Đăng ký ngay
-          </Link>
-        </FooterText>
 
         <Text type="secondary" style={{ fontSize: 13 }}>
           © 2025 GYM Management Admin
