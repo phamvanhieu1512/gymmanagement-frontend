@@ -7,6 +7,7 @@ import {
   BarChartOutlined,
   UserOutlined,
   LogoutOutlined,
+  CodeSandboxOutlined,
 } from "@ant-design/icons";
 import { Button, Layout, Menu } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -37,8 +38,28 @@ const DefaultComponent = ({ children }) => {
     { key: "/admin", icon: <DashboardOutlined />, label: "Tổng quan" },
     {
       key: "/admin/packages",
+      icon: <CodeSandboxOutlined />,
+      label: "Quản lý gói tập",
+    },
+    {
+      key: "/admin/memberships",
+      icon: <UserOutlined />,
+      label: "Quản lý hội viên",
+    },
+    {
+      key: "/admin/trainers",
       icon: <TeamOutlined />,
-      label: "Quản lý gói tập & HLV",
+      label: "Quản lý huấn luyện viên",
+    },
+    {
+      key: "/admin/users",
+      icon: <TeamOutlined />,
+      label: "Quản lý người dùng",
+    },
+    {
+      key: "/admin/attendance",
+      icon: <BarChartOutlined />,
+      label: "Quản lý điểm danh",
     },
     {
       key: "/admin/transactions",

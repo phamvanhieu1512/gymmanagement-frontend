@@ -1,4 +1,3 @@
-// MembershipPackage.jsx
 import React, { useEffect, useState } from "react";
 import {
   Table,
@@ -29,7 +28,7 @@ const defaultFormValues = {
   sessionsWithTrainer: 0,
 };
 
-const MembershipPackage = () => {
+const PackagePage = () => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -292,4 +291,4 @@ const MembershipPackage = () => {
   );
 };
 
-export default MembershipPackage;
+export default PackagePage;

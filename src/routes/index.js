@@ -1,6 +1,5 @@
 import CheckInLogsPage from "../pages/staff/CheckInLogsPage/CheckInLogsPage";
 import DashboardPage from "../pages/admin/DashboardPage/DashboardPage";
-import MembershipPackage from "../pages/admin/MembershipPackage/MembershipPackage";
 import MembersPage from "../pages/staff/MembersPage/MembersPage";
 import SchedulePage from "../pages/staff/SchedulePage/SchedulePage";
 import TrainersPage from "../pages/admin/TrainersPage/TrainersPage";
@@ -13,6 +12,10 @@ import StaffsPage from "../pages/admin/StaffsPage/StaffsPage";
 import NotFoundPage from "../pages/NotFoundPage/NotFoundPage";
 import ForgotPasswordPage from "../pages/Login_SignUp/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/Login_SignUp/ResetPasswordPage";
+import MembershipPage from "../pages/admin/MembershipPage/MembershipPage";
+import PackagePage from "../pages/admin/PackagePage/PackagePage";
+import UserPage from "../pages/admin/UserPage/UserPage";
+import AttendancePage from "../pages/admin/AttendancePage/AttendancePage";
 
 export const routes = [
   {
@@ -38,10 +41,22 @@ export const routes = [
     path: "/admin",
     page: DashboardPage, // Trang tổng quan
     isShowMenuBarAdmin: true,
+    isPrivate: true,
+    allowedRoles: ["staff", "admin"],
   },
   {
     path: "/admin/packages",
-    page: MembershipPackage, // Quản lý gói tập
+    page: PackagePage, // Quản lý gói tập
+    isShowMenuBarAdmin: true,
+  },
+  {
+    path: "/admin/memberships",
+    page: MembershipPage, // Quản lý hội viên
+    isShowMenuBarAdmin: true,
+  },
+  {
+    path: "/admin/users",
+    page: UserPage, // Quản lý người dùng
     isShowMenuBarAdmin: true,
   },
   {
@@ -50,13 +65,13 @@ export const routes = [
     isShowMenuBarAdmin: true,
   },
   {
-    path: "/admin/transactions",
-    page: TransactionsPage, // Theo dõi giao dịch
+    path: "/admin/attendance",
+    page: AttendancePage, // Quản lý điểm danh
     isShowMenuBarAdmin: true,
   },
   {
-    path: "/admin/reports",
-    page: ReportsPage, // Báo cáo tổng hợp
+    path: "/admin/transactions",
+    page: TransactionsPage, // Theo dõi giao dịch
     isShowMenuBarAdmin: true,
   },
   {
@@ -70,6 +85,8 @@ export const routes = [
     path: "/staff",
     page: StaffDashboardPage, // Trang tổng quan nhân viên (có thể là danh sách hội viên)
     isShowMenuBarStaff: true,
+    isPrivate: true,
+    allowedRoles: ["staff", "admin"],
   },
   {
     path: "/staff/members",

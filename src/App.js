@@ -1,17 +1,20 @@
-import React, { Fragment, useEffect } from "react";
+import React, { Fragment, useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { routes } from "./routes";
 import DefaultComponent from "./components/Admin/DefaultComponent/AdminDefaultComponent";
 import StaffDefaultComponent from "./components/Staff/DefaultComponent/StaffDefaultComponent";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import * as UserService from "./services/Admin/UserService";
 import { updateUser } from "./redux/slides/userSlice";
 import { isJsonString } from "./utils/utils";
 
 function App() {
   const dispatch = useDispatch();
+  const [isLoading, setIsLoading] = useState(false);
+  const user = useSelector((state) => state.user);
+
   useEffect(() => {
     const { storageData, decoded } = handleDecoded();
     if (decoded?.id) {
@@ -55,28 +58,37 @@ function App() {
   return (
     <Router>
       <Routes>
-        {routes.map((route) => {
-          const Page = route.page;
+        {routes
+          .filter((route) => {
+            // Nếu route không private -> ai cũng xem được
+            if (!route.isPrivate) return true;
 
-          let Layout = Fragment;
-          if (route.isShowMenuBarAdmin) {
-            Layout = DefaultComponent;
-          } else if (route.isShowMenuBarStaff) {
-            Layout = StaffDefaultComponent;
-          }
+            // Nếu route private -> kiểm tra role có nằm trong danh sách allowedRoles
+            if (route.allowedRoles?.includes(user?.role)) {
+              return true;
+            }
 
-          return (
-            <Route
-              key={route.path}
-              path={route.path}
-              element={
-                <Layout>
-                  <Page />
-                </Layout>
-              }
-            />
-          );
-        })}
+            return false;
+          })
+          .map((route) => {
+            const Page = route.page;
+
+            let Layout = Fragment;
+            if (route.isShowMenuBarAdmin) Layout = DefaultComponent;
+            else if (route.isShowMenuBarStaff) Layout = StaffDefaultComponent;
+
+            return (
+              <Route
+                key={route.path}
+                path={route.path}
+                element={
+                  <Layout>
+                    <Page />
+                  </Layout>
+                }
+              />
+            );
+          })}
       </Routes>
     </Router>
   );
