@@ -21,7 +21,7 @@ import {
 } from "@ant-design/icons";
 import * as UserService from "../../../services/Admin/UserService";
 import { useMutationHook } from "../../../hooks/useMutationHook";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { getValidToken } from "../../../services/getValidToken";
 import { Upload } from "antd";
@@ -37,6 +37,7 @@ const UserPage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editUser, setEditUser] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const queryClient = useQueryClient();
 
   const [form] = Form.useForm();
 
@@ -101,6 +102,8 @@ const UserPage = () => {
     }
 
     message.success("Cập nhật người dùng thành công!");
+    queryClient.invalidateQueries(["users"]);
+
     setIsEditModalOpen(false);
     form.resetFields();
     setSelectedFile(null);
@@ -119,8 +122,8 @@ const UserPage = () => {
           return;
         }
 
-        // Nếu OK
         message.success("Tạo người dùng thành công!");
+        queryClient.invalidateQueries(["users"]);
         setIsModalOpen(false);
         form.resetFields();
       },
