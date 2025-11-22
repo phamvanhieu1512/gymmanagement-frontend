@@ -88,3 +88,20 @@ export const searchPackage = async (data, access_token) => {
     throw error;
   }
 };
+
+export const getDetailsPackage = async (id, access_token) => {
+  try {
+    const resGetDetails = await axios.get(
+      `${process.env.REACT_APP_API_URL_BACKEND}/admin/get-details-package/${id}`,
+      {
+        headers: {
+          token: `Bearer ${access_token}`,
+        },
+      }
+    );
+    return resGetDetails.data;
+  } catch (error) {
+    console.log(error);
+    // throw error;
+  }
+};

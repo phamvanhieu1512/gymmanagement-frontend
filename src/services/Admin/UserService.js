@@ -137,3 +137,37 @@ export const uploadAvatar = async (id, data, access_token) => {
     throw error;
   }
 };
+
+export const getDetailsMember = async (id, access_token) => {
+  try {
+    const resGetDetails = await axios.get(
+      `${process.env.REACT_APP_API_URL_BACKEND}/user/get-details-member/${id}`,
+      {
+        headers: {
+          token: `Bearer ${access_token}`,
+        },
+      }
+    );
+    return resGetDetails.data;
+  } catch (error) {
+    console.log(error);
+    // throw error;
+  }
+};
+
+export const getDetailsTrainer = async (id, access_token) => {
+  try {
+    const resGetDetails = await axios.get(
+      `${process.env.REACT_APP_API_URL_BACKEND}/user/get-details-trainer/${id}`,
+      {
+        headers: {
+          token: `Bearer ${access_token}`,
+        },
+      }
+    );
+    return resGetDetails.data;
+  } catch (error) {
+    console.log(error);
+    // throw error;
+  }
+};
