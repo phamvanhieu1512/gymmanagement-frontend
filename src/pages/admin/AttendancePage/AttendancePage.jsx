@@ -1,49 +1,100 @@
+import {
+  Button,
+  Col,
+  Form,
+  Input,
+  Modal,
+  Row,
+  Select,
+  Table,
+  Typography,
+  Checkbox,
+  message,
+} from "antd";
 import React, { useState } from "react";
-import { Table, Modal, Checkbox, Button } from "antd";
 import { QRCodeCanvas } from "qrcode.react";
-
-// Mock data gói tập / session
-const mockPackages = [
-  { id: "p1", name: "Yoga 10 buổi", type: "Group", duration: "1 tháng" },
-  { id: "p2", name: "PT 1-1", type: "Personal Trainer", duration: "2 tuần" },
-];
-
-// Mock member data
-const mockMembers = {
-  p1: [
-    { id: "m1", name: "Nguyễn A", remainingSessions: 5 },
-    { id: "m2", name: "Trần B", remainingSessions: 3 },
-  ],
-  p2: [
-    { id: "m3", name: "Lê C", remainingSessions: 1 },
-    { id: "m4", name: "Phạm D", remainingSessions: 0 },
-  ],
-};
+import * as checkInQRService from "../../../services/Admin/checkInQRService";
+import { useQuery } from "@tanstack/react-query";
+import dayjs from "dayjs";
+import { getValidToken } from "../../../services/getValidToken";
 
 const AttendancePage = () => {
+  const { Title } = Typography;
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [isMemberModalVisible, setIsMemberModalVisible] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
+  const [qrValue, setQrValue] = useState(""); // Lưu QR hash từ backend
 
-  // Khi click vào row của gói
+  // Lấy danh sách members từ backend
+  const getAllMembers = async () => {
+    const token = await getValidToken();
+    if (!token)
+      return { status: "ERROR", message: "Token không hợp lệ", data: [] };
+
+    const res = await checkInQRService.getAllMembers(token);
+    return res.data || [];
+  };
+
+  const { data: membersData = [], isLoading } = useQuery({
+    queryKey: ["members"],
+    queryFn: getAllMembers,
+  });
+
+  // Tạo danh sách gói tập duy nhất (không trùng)
+  const packageList = Array.from(
+    new Map(membersData.map((m) => [m.packageName, m])).values()
+  );
+
+  // Khi click vào row của gói → show modal members
   const handlePackageRowClick = (record) => {
     setSelectedPackage(record);
     setIsMemberModalVisible(true);
   };
 
-  // Khi tick member → hiển thị QR modal
-  const handleTickMember = (member) => {
-    setSelectedMember(member);
+  // Khi tick member → gọi API tạo QR và show QR
+  const handleTickMember = async (member) => {
+    try {
+      const token = await getValidToken();
+      const res = await checkInQRService.createQR(token, {
+        membershipId: member.membershipId,
+        memberId: member.memberId,
+      });
+
+      if (res.status === "OK") {
+        setSelectedMember(member);
+        setQrValue(res.data.hash); // backend trả về hash
+      } else {
+        message.error(res.message || "Tạo QR thất bại");
+      }
+    } catch (err) {
+      console.error(err);
+      message.error("Lỗi tạo QR. Vui lòng thử lại");
+    }
   };
 
-  // Columns của table gói
+  // Columns table gói
   const packageColumns = [
-    { title: "Tên gói tập", dataIndex: "name", key: "name" },
-    { title: "Loại", dataIndex: "type", key: "type" },
-    { title: "Thời lượng", dataIndex: "duration", key: "duration" },
+    { title: "Tên gói tập", dataIndex: "packageName", key: "packageName" },
+    {
+      title: "Buổi còn lại",
+      dataIndex: "remainingSessions",
+      key: "remainingSessions",
+    },
+    {
+      title: "Bắt đầu",
+      dataIndex: "startDate",
+      key: "startDate",
+      render: (d) => dayjs(d).format("DD/MM/YYYY"),
+    },
+    {
+      title: "Kết thúc",
+      dataIndex: "endDate",
+      key: "endDate",
+      render: (d) => dayjs(d).format("DD/MM/YYYY"),
+    },
   ];
 
-  // Columns của table member
+  // Columns table member trong modal
   const memberColumns = [
     {
       title: "Tick",
@@ -55,51 +106,68 @@ const AttendancePage = () => {
         />
       ),
     },
-    { title: "Tên Member", dataIndex: "name", key: "name" },
-    { title: "Buổi còn lại", dataIndex: "remainingSessions", key: "remaining" },
+    { title: "Tên Member", dataIndex: "fullName", key: "fullName" },
+    { title: "Email", dataIndex: "email", key: "email" },
+    { title: "Số điện thoại", dataIndex: "phone", key: "phone" },
+    {
+      title: "Buổi còn lại",
+      dataIndex: "remainingSessions",
+      key: "remainingSessions",
+    },
   ];
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Danh sách gói tập / lớp</h1>
+    <div style={{ padding: 24 }}>
+      <Title level={3}>Quản lý điểm danh</Title>
+
       <Table
+        loading={isLoading}
+        rowKey="membershipId"
+        dataSource={packageList}
         columns={packageColumns}
-        dataSource={mockPackages}
-        rowKey="id"
         onRow={(record) => ({
           onClick: () => handlePackageRowClick(record),
           style: { cursor: "pointer" },
         })}
+        pagination={{ pageSize: 10 }}
       />
 
       {/* Modal danh sách member */}
       <Modal
-        title={selectedPackage ? `Member của gói: ${selectedPackage.name}` : ""}
-        visible={isMemberModalVisible}
+        title={
+          selectedPackage
+            ? `Member của gói: ${selectedPackage.packageName}`
+            : ""
+        }
+        open={isMemberModalVisible}
         onCancel={() => setIsMemberModalVisible(false)}
         footer={null}
+        width={800}
       >
         <Table
           columns={memberColumns}
-          dataSource={selectedPackage ? mockMembers[selectedPackage.id] : []}
-          rowKey="id"
+          dataSource={
+            selectedPackage
+              ? membersData.filter(
+                  (m) => m.packageName === selectedPackage.packageName
+                )
+              : []
+          }
+          rowKey="membershipId"
           pagination={false}
         />
       </Modal>
 
       {/* Modal QR member */}
       <Modal
-        title={selectedMember ? `QR của ${selectedMember.name}` : ""}
-        visible={!!selectedMember}
+        title={selectedMember ? `QR của ${selectedMember.fullName}` : ""}
+        open={!!selectedMember}
         onCancel={() => setSelectedMember(null)}
         footer={<Button onClick={() => setSelectedMember(null)}>Đóng</Button>}
       >
-        {selectedMember && (
-          <div className="flex justify-center">
-            <QRCodeCanvas
-              value={`QR-${selectedPackage.id}-${selectedMember.id}`}
-              size={200}
-            />
+        {selectedMember && qrValue && (
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <QRCodeCanvas value={qrValue} size={200} />
           </div>
         )}
       </Modal>
