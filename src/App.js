@@ -9,6 +9,7 @@ import { useDispatch, useSelector } from "react-redux";
 import * as UserService from "./services/Admin/UserService";
 import { updateUser } from "./redux/slides/userSlice";
 import { isJsonString } from "./utils/utils";
+import GuestRoute from "./components/GuestRoute";
 
 function App() {
   const dispatch = useDispatch();
@@ -57,37 +58,47 @@ function App() {
   return (
     <Router>
       <Routes>
-        {routes
-          .filter((route) => {
-            // Nếu route không private -> ai cũng xem được
-            if (!route.isPrivate) return true;
+        {routes.map((route) => {
+          const Page = route.page;
 
-            // Nếu route private -> kiểm tra role có nằm trong danh sách allowedRoles
-            if (route.allowedRoles?.includes(user?.role)) {
-              return true;
-            }
+          // Chọn layout
+          let Layout = Fragment;
+          if (route.isShowMenuBarAdmin) Layout = DefaultComponent;
+          else if (route.isShowMenuBarStaff) Layout = StaffDefaultComponent;
 
-            return false;
-          })
-          .map((route) => {
-            const Page = route.page;
-
-            let Layout = Fragment;
-            if (route.isShowMenuBarAdmin) Layout = DefaultComponent;
-            else if (route.isShowMenuBarStaff) Layout = StaffDefaultComponent;
-
+          // Nếu là trang login (guest only)
+          if (route.isGuest) {
             return (
               <Route
                 key={route.path}
                 path={route.path}
                 element={
-                  <Layout>
+                  <GuestRoute>
                     <Page />
-                  </Layout>
+                  </GuestRoute>
                 }
               />
             );
-          })}
+          }
+
+          // Nếu route private (admin/staff)
+          if (route.isPrivate) {
+            if (!route.allowedRoles?.includes(user?.role)) return null;
+          }
+
+          // Route public bình thường
+          return (
+            <Route
+              key={route.path}
+              path={route.path}
+              element={
+                <Layout>
+                  <Page />
+                </Layout>
+              }
+            />
+          );
+        })}
       </Routes>
     </Router>
   );

@@ -118,7 +118,9 @@ const AttendancePage = () => {
 
   return (
     <div style={{ padding: 24 }}>
-      <Title level={3}>Quản lý điểm danh</Title>
+      <Title level={3}>
+        <span style={{ color: "#fff" }}>Quản lý điểm danh</span>
+      </Title>
 
       <Table
         loading={isLoading}

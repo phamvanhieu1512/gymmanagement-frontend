@@ -63,6 +63,16 @@ const UserPage = () => {
     queryFn: getAllMembers,
   });
 
+  const filteredUsers = usersData?.data.filter((user) => {
+    const search = searchValue.toLowerCase();
+
+    const fullNameMatch = user.fullName?.toLowerCase().includes(search);
+    const emailMatch = user.email?.toLowerCase().includes(search);
+    const phoneMatch = (user.phone || "").includes(search);
+
+    return fullNameMatch || emailMatch || phoneMatch;
+  });
+
   const infoMember = (user) => {
     setSelectedUser(user);
     setIsInfoModalOpen(true);
@@ -77,7 +87,8 @@ const UserPage = () => {
       gender: user.gender,
       dateOfBirth: dayjs(user.dateOfBirth),
       role: user.role,
-      avatarUrl: user.avatarUrl, // thêm dòng này
+      avatarUrl: user.avatarUrl,
+      isActive: user.isActive,
     });
     setIsEditModalOpen(true);
   };
@@ -153,12 +164,17 @@ const UserPage = () => {
           marginBottom: 16,
         }}
       >
-        <Search
-          placeholder="Tìm kiếm người dùng..."
-          onChange={(e) => setSearchValue(e.target.value)}
-          style={{ width: 300 }}
-          allowClear
-        />
+        <Row gutter={16} style={{ marginBottom: 16 }}>
+          <Col>
+            <Input.Search
+              placeholder="Tìm kiếm Họ tên, Email, Số điện thoại..."
+              allowClear
+              style={{ width: 300 }}
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+            />
+          </Col>
+        </Row>
         <Button
           onClick={() => setIsModalOpen(true)}
           type="primary"
@@ -171,15 +187,47 @@ const UserPage = () => {
       <Table
         rowKey="_id"
         loading={isLoadingUsers}
-        dataSource={usersData?.data || []}
+        dataSource={filteredUsers}
         columns={[
           {
             title: "STT",
             render: (_, __, index) => index + 1,
             width: 70,
           },
-          { title: "Họ tên", dataIndex: "fullName" },
-          { title: "Email", dataIndex: "email" },
+          {
+            title: "Họ tên",
+            dataIndex: "fullName",
+            ellipsis: { showTitle: true },
+            render: (text) => (
+              <div
+                style={{
+                  maxWidth: 150,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {text}
+              </div>
+            ),
+          },
+          {
+            title: "Email",
+            dataIndex: "email",
+            ellipsis: { showTitle: true },
+            render: (text) => (
+              <div
+                style={{
+                  maxWidth: 200,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {text}
+              </div>
+            ),
+          },
           { title: "Số điện thoại", dataIndex: "phone" },
           { title: "Vai trò", dataIndex: "role" },
           { title: "Giới tính", dataIndex: "gender" },
@@ -200,7 +248,7 @@ const UserPage = () => {
           {
             title: "Hành động",
             render: (_, record) => (
-              <Space>
+              <Space style={{ whiteSpace: "nowrap" }}>
                 <Button onClick={() => infoMember(record)}>
                   <InfoCircleOutlined />
                 </Button>
@@ -209,6 +257,7 @@ const UserPage = () => {
                 </Button>
               </Space>
             ),
+            width: 120, // cố định chiều rộng cột
           },
         ]}
         pagination={{
@@ -451,6 +500,24 @@ const UserPage = () => {
                 rules={[{ required: true, message: "Vui lòng chọn ngày sinh" }]}
               >
                 <DatePicker style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+
+            <Col span={12}>
+              <Form.Item
+                label="Trạng thái hoạt động"
+                name="isActive"
+                rules={[
+                  { required: true, message: "Vui lòng chọn trạng thái" },
+                ]}
+              >
+                <Select
+                  placeholder="Chọn trạng thái"
+                  options={[
+                    { label: "Đang hoạt động", value: true },
+                    { label: "Ngừng hoạt động", value: false },
+                  ]}
+                />
               </Form.Item>
             </Col>
 

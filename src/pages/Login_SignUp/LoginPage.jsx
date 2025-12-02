@@ -33,6 +33,7 @@ const LoginPage = () => {
 
         if (data?.access_Token) {
           const decoded = jwtDecode(data?.access_Token);
+          console.log("Decoded JWT:", decoded);
           if (decoded?.id) {
             handleGetDetailsUser(decoded?.id, data?.access_Token);
           }

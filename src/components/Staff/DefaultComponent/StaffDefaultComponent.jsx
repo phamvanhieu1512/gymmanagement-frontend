@@ -13,6 +13,9 @@ import { Button, Layout } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 import logoTrang from "../../../assets/images/logo/logo_trang.png";
 import { StyledMenu } from "./styleStaffDefaultComponent";
+import { useDispatch, useSelector } from "react-redux";
+import * as UserService from "../../../services/Admin/UserService";
+import { resetUser } from "../../../redux/slides/userSlice";
 
 const { Header, Sider, Content } = Layout;
 
@@ -20,6 +23,16 @@ const StaffDefaultComponent = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user);
+
+  const handleLogout = async () => {
+    await UserService.logoutUser();
+    dispatch(resetUser());
+    navigate("/");
+    // localStorage.removeItem("accessToken");
+    // navigate("/login");
+  };
 
   const menuItems = [
     { key: "/staff", icon: <DashboardOutlined />, label: "Tổng quan" },
@@ -39,10 +52,17 @@ const StaffDefaultComponent = ({ children }) => {
       label: "Quản lý Check-in",
     },
     { key: "/staff/schedules", icon: <CalendarOutlined />, label: "Lịch tập" },
-    { key: "/staff/logout", icon: <LogoutOutlined />, label: "Đăng xuất" },
+    { key: "logout", icon: <LogoutOutlined />, label: "Đăng xuất" },
   ];
 
-  const handleMenuClick = (e) => navigate(e.key);
+  const handleMenuClick = async (e) => {
+    // e.domEvent.preventDefault();
+    if (e.key === "logout") {
+      await handleLogout();
+    } else {
+      navigate(e.key);
+    }
+  };
 
   return (
     <Layout style={{ minHeight: "100vh", background: "#F5F7FA" }}>
@@ -76,18 +96,21 @@ const StaffDefaultComponent = ({ children }) => {
           />
           <div
             style={{
-              height: 45,
-              width: 130,
+              height: 50,
+              width: 150,
+              margin: 16,
               backgroundImage: `url(${logoTrang})`,
-              backgroundSize: "contain",
+              backgroundSize: "cover",
               backgroundRepeat: "no-repeat",
               backgroundPosition: "center",
+              borderRadius: 8,
             }}
           />
           <h2 style={{ margin: 0, color: "#FFFFFF", fontWeight: 500 }}>
             Quản lý nhân viên GYM
           </h2>
         </div>
+        {user?.fullName ? <div>{user.fullName}</div> : <div>Tài khoản</div>}
       </Header>
 
       {/* LAYOUT CHÍNH */}

@@ -70,11 +70,31 @@ const MembershipPage = () => {
   // selected.userId.fullName, selected.packageId.name, selected.trainerId.fullName
 
   const columns = [
-    { title: "Hội viên", dataIndex: "userName" },
+    {
+      title: "Hội viên",
+      dataIndex: "userName",
+      ellipsis: {
+        showTitle: true, // hover sẽ hiển thị tooltip
+      },
+      render: (text) => <div style={{ maxWidth: 150 }}>{text}</div>, // giới hạn width
+    },
     {
       title: "Gói tập",
       dataIndex: "packageName",
-      render: (value) => <Tag color="blue">{value}</Tag>,
+      ellipsis: { showTitle: true },
+      render: (value) => (
+        <Tag
+          color="blue"
+          style={{
+            maxWidth: 120,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {value}
+        </Tag>
+      ),
     },
     {
       title: "Trainer",
@@ -104,7 +124,7 @@ const MembershipPage = () => {
       title: "Hành động",
       align: "center",
       render: (record) => (
-        <Space>
+        <Space style={{ whiteSpace: "nowrap" }}>
           <Button size="small" onClick={() => openDetailModal(record)}>
             Chi tiết
           </Button>
@@ -124,6 +144,7 @@ const MembershipPage = () => {
           </Button>
         </Space>
       ),
+      width: 250, // đặt chiều rộng tối thiểu
     },
   ];
 

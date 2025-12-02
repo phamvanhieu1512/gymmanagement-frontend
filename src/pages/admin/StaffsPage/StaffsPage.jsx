@@ -12,89 +12,89 @@ import {
   Tag,
   Typography,
   message,
+  Upload,
 } from "antd";
 import React, { useState } from "react";
 import {
   EditOutlined,
   PlusOutlined,
   InfoCircleOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import * as StaffService from "../../../services/Admin/StaffService";
 import { useMutationHook } from "../../../hooks/useMutationHook";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { getValidToken } from "../../../services/getValidToken";
-import { Upload } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
 
 const StaffsPage = () => {
   const { Title } = Typography;
-  const { Search } = Input;
   const [searchValue, setSearchValue] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedStaff, setSelectedStaff] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editUser, setEditUser] = useState(null);
+  const [editStaff, setEditStaff] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const queryClient = useQueryClient();
-
   const [form] = Form.useForm();
-
   const url = "http://localhost:5000";
 
-  const mutationCreateUser = useMutationHook(async (data) => {
+  const mutationCreateStaff = useMutationHook(async (data) => {
     const token = await getValidToken();
     return StaffService.createUser(data, token);
   });
 
   const getAllStaffs = async () => {
     const token = await getValidToken();
-    if (!token) {
+    if (!token)
       return { status: "ERROR", message: "Token không hợp lệ", data: [] };
-    }
-
-    const res = await StaffService.getAllStaffs(token);
-    return res;
+    return StaffService.getAllStaffs(token);
   };
 
-  const { isLoading: isLoadingUsers, data: usersData } = useQuery({
-    queryKey: ["users"],
+  const { isLoading, data: staffData } = useQuery({
+    queryKey: ["staffs"],
     queryFn: getAllStaffs,
   });
 
-  const infoMember = (user) => {
-    setSelectedUser(user);
+  const filteredStaffs = staffData?.data.filter((staff) => {
+    const search = searchValue.toLowerCase();
+    const fullNameMatch = staff.fullName?.toLowerCase().includes(search);
+    const emailMatch = staff.email?.toLowerCase().includes(search);
+    const phoneMatch = (staff.phone || "").includes(search);
+    return fullNameMatch || emailMatch || phoneMatch;
+  });
+
+  const viewStaffInfo = (staff) => {
+    setSelectedStaff(staff);
     setIsInfoModalOpen(true);
   };
 
-  const openEditModal = (user) => {
-    setEditUser(user);
+  const openEditModal = (staff) => {
+    setEditStaff(staff);
     form.setFieldsValue({
-      fullName: user.fullName,
-      email: user.email,
-      phone: user.phone,
-      gender: user.gender,
-      dateOfBirth: dayjs(user.dateOfBirth),
-      role: user.role,
-      avatarUrl: user.avatarUrl,
+      fullName: staff.fullName,
+      email: staff.email,
+      phone: staff.phone,
+      gender: staff.gender,
+      dateOfBirth: dayjs(staff.dateOfBirth),
+      role: staff.role,
+      avatarUrl: staff.avatarUrl,
+      isActive: staff.isActive,
     });
     setIsEditModalOpen(true);
   };
 
-  const handleEditUser = async (values) => {
+  const handleEditStaff = async (values) => {
     const token = await getValidToken();
 
-    // Nếu có chọn ảnh → upload avatar trước
     if (selectedFile) {
       const formData = new FormData();
       formData.append("avatar", selectedFile);
-
-      await StaffService.uploadAvatar(editUser._id, formData, token);
+      await StaffService.uploadAvatar(editStaff._id, formData, token);
     }
 
-    // Sau đó mới update thông tin user
-    const res = await StaffService.updateTrainer(editUser._id, values, token);
+    const res = await StaffService.updateTrainer(editStaff._id, values, token);
 
     if (res.status === "ERROR") {
       message.error(res.message || "Cập nhật thất bại");
@@ -102,42 +102,34 @@ const StaffsPage = () => {
     }
 
     message.success("Cập nhật nhân viên thành công!");
-    queryClient.invalidateQueries(["users"]);
+    queryClient.invalidateQueries(["staffs"]);
 
     setIsEditModalOpen(false);
     form.resetFields();
     setSelectedFile(null);
   };
 
-  const onFinish = (values) => {
-    mutationCreateUser.mutate(values, {
+  const handleCreateStaff = (values) => {
+    mutationCreateStaff.mutate(values, {
       onSuccess: (res) => {
-        if (res.data?.status === "ERROR") {
-          message.error(res.data.message);
+        if (res.data?.status === "ERROR" || res.status === "ERROR") {
+          message.error(res.data?.message || res.message);
           return;
         }
-
-        if (res.status === "ERROR") {
-          message.error(res.message);
-          return;
-        }
-
         message.success("Tạo nhân viên thành công!");
-        queryClient.invalidateQueries(["users"]);
+        queryClient.invalidateQueries(["staffs"]);
         setIsModalOpen(false);
         form.resetFields();
       },
-
-      onError: (err) => {
-        message.error("Lỗi hệ thống! Vui lòng thử lại.");
-        console.log("Error:", err);
-      },
+      onError: () => message.error("Lỗi hệ thống! Vui lòng thử lại."),
     });
   };
 
   const handleCancel = () => {
     setIsModalOpen(false);
+    setIsEditModalOpen(false);
     form.resetFields();
+    setSelectedFile(null);
   };
 
   return (
@@ -153,16 +145,17 @@ const StaffsPage = () => {
           marginBottom: 16,
         }}
       >
-        <Search
-          placeholder="Tìm kiếm nhân viên..."
-          onChange={(e) => setSearchValue(e.target.value)}
-          style={{ width: 300 }}
+        <Input.Search
+          placeholder="Tìm kiếm Họ tên, Email, Số điện thoại..."
           allowClear
+          style={{ width: 300 }}
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
         />
         <Button
-          onClick={() => setIsModalOpen(true)}
           type="primary"
           icon={<PlusOutlined />}
+          onClick={() => setIsModalOpen(true)}
         >
           Thêm nhân viên
         </Button>
@@ -170,14 +163,10 @@ const StaffsPage = () => {
 
       <Table
         rowKey="_id"
-        loading={isLoadingUsers}
-        dataSource={usersData?.data || []}
+        loading={isLoading}
+        dataSource={filteredStaffs}
         columns={[
-          {
-            title: "STT",
-            render: (_, __, index) => index + 1,
-            width: 70,
-          },
+          { title: "STT", render: (_, __, index) => index + 1, width: 70 },
           { title: "Họ tên", dataIndex: "fullName" },
           { title: "Email", dataIndex: "email" },
           { title: "Số điện thoại", dataIndex: "phone" },
@@ -201,7 +190,7 @@ const StaffsPage = () => {
             title: "Hành động",
             render: (_, record) => (
               <Space>
-                <Button onClick={() => infoMember(record)}>
+                <Button onClick={() => viewStaffInfo(record)}>
                   <InfoCircleOutlined />
                 </Button>
                 <Button onClick={() => openEditModal(record)}>
@@ -211,19 +200,17 @@ const StaffsPage = () => {
             ),
           },
         ]}
-        pagination={{
-          pageSize: 10, // mỗi trang 10 người
-        }}
+        pagination={{ pageSize: 10 }}
       />
 
+      {/* Modal Thêm */}
       <Modal
         title="Thêm nhân viên mới"
         open={isModalOpen}
         onCancel={handleCancel}
         footer={null}
-        form={form}
       >
-        <Form layout="vertical" onFinish={onFinish} form={form}>
+        <Form layout="vertical" onFinish={handleCreateStaff} form={form}>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -234,7 +221,6 @@ const StaffsPage = () => {
                 <Input />
               </Form.Item>
             </Col>
-
             <Col span={12}>
               <Form.Item
                 label="Ngày sinh"
@@ -244,7 +230,6 @@ const StaffsPage = () => {
                 <DatePicker style={{ width: "100%" }} />
               </Form.Item>
             </Col>
-
             <Col span={12}>
               <Form.Item
                 label="Giới tính"
@@ -260,7 +245,6 @@ const StaffsPage = () => {
                 />
               </Form.Item>
             </Col>
-
             <Col span={12}>
               <Form.Item
                 label="Email"
@@ -273,7 +257,6 @@ const StaffsPage = () => {
                 <Input />
               </Form.Item>
             </Col>
-
             <Col span={12}>
               <Form.Item
                 label="Số điện thoại"
@@ -285,7 +268,6 @@ const StaffsPage = () => {
                 <Input />
               </Form.Item>
             </Col>
-
             <Col span={12}>
               <Form.Item
                 label="Mật khẩu"
@@ -295,11 +277,9 @@ const StaffsPage = () => {
                 <Input.Password />
               </Form.Item>
             </Col>
-
             <Form.Item name="role" hidden initialValue="trainer">
               <Input />
             </Form.Item>
-
             <Form.Item
               name="avatarUrl"
               hidden
@@ -308,18 +288,18 @@ const StaffsPage = () => {
               <Input />
             </Form.Item>
           </Row>
-
           <Button
             type="primary"
             htmlType="submit"
             block
-            loading={mutationCreateUser.isLoading}
+            loading={mutationCreateStaff.isLoading}
           >
             Thêm nhân viên
           </Button>
         </Form>
       </Modal>
 
+      {/* Modal Thông tin */}
       <Modal
         title="Thông tin nhân viên"
         open={isInfoModalOpen}
@@ -330,12 +310,12 @@ const StaffsPage = () => {
           </Button>,
         ]}
       >
-        {selectedUser && (
+        {selectedStaff && (
           <div>
             <div style={{ textAlign: "center", marginBottom: 16 }}>
               <img
-                src={`${url}${selectedUser.avatarUrl}`}
-                alt={selectedUser.fullName}
+                src={`${url}${selectedStaff.avatarUrl}`}
+                alt={selectedStaff.fullName}
                 style={{
                   width: 120,
                   height: 120,
@@ -345,45 +325,46 @@ const StaffsPage = () => {
               />
             </div>
             <p>
-              <strong>Họ tên:</strong> {selectedUser.fullName}
+              <strong>Họ tên:</strong> {selectedStaff.fullName}
             </p>
             <p>
-              <strong>Email:</strong> {selectedUser.email}
+              <strong>Email:</strong> {selectedStaff.email}
             </p>
             <p>
-              <strong>Số điện thoại:</strong> {selectedUser.phone}
+              <strong>Số điện thoại:</strong> {selectedStaff.phone}
             </p>
             <p>
-              <strong>Vai trò:</strong> {selectedUser.role}
+              <strong>Vai trò:</strong> {selectedStaff.role}
             </p>
             <p>
-              <strong>Giới tính:</strong> {selectedUser.gender}
+              <strong>Giới tính:</strong> {selectedStaff.gender}
             </p>
             <p>
               <strong>Ngày sinh:</strong>{" "}
-              {dayjs(selectedUser.dateOfBirth).format("DD/MM/YYYY")}
+              {dayjs(selectedStaff.dateOfBirth).format("DD/MM/YYYY")}
             </p>
             <p>
               <strong>Trạng thái:</strong>{" "}
-              {selectedUser.isActive ? "Hoạt động" : "Khóa"}
+              {selectedStaff.isActive ? "Hoạt động" : "Khóa"}
             </p>
           </div>
         )}
       </Modal>
 
+      {/* Modal Sửa */}
       <Modal
         title="Chỉnh sửa nhân viên"
         open={isEditModalOpen}
-        onCancel={() => setIsEditModalOpen(false)}
+        onCancel={handleCancel}
         footer={null}
       >
-        <Form layout="vertical" form={form} onFinish={handleEditUser}>
+        <Form layout="vertical" form={form} onFinish={handleEditStaff}>
           <Row gutter={16}>
             <Col span={24} style={{ textAlign: "center", marginBottom: 16 }}>
-              {editUser?.avatarUrl && (
+              {editStaff?.avatarUrl && (
                 <img
-                  src={`${url}${selectedUser.avatarUrl}`}
-                  alt={selectedUser.fullName}
+                  src={`${url}${editStaff.avatarUrl}`}
+                  alt={editStaff.fullName}
                   style={{
                     width: 120,
                     height: 120,
@@ -402,7 +383,6 @@ const StaffsPage = () => {
                 <Input />
               </Form.Item>
             </Col>
-
             <Col span={12}>
               <Form.Item
                 label="Email"
@@ -415,7 +395,6 @@ const StaffsPage = () => {
                 <Input />
               </Form.Item>
             </Col>
-
             <Col span={12}>
               <Form.Item
                 label="Số điện thoại"
@@ -427,7 +406,6 @@ const StaffsPage = () => {
                 <Input />
               </Form.Item>
             </Col>
-
             <Col span={12}>
               <Form.Item
                 label="Giới tính"
@@ -443,7 +421,6 @@ const StaffsPage = () => {
                 />
               </Form.Item>
             </Col>
-
             <Col span={12}>
               <Form.Item
                 label="Ngày sinh"
@@ -453,16 +430,31 @@ const StaffsPage = () => {
                 <DatePicker style={{ width: "100%" }} />
               </Form.Item>
             </Col>
-
+            <Col span={12}>
+              <Form.Item
+                label="Trạng thái hoạt động"
+                name="isActive"
+                rules={[
+                  { required: true, message: "Vui lòng chọn trạng thái" },
+                ]}
+              >
+                <Select
+                  placeholder="Chọn trạng thái"
+                  options={[
+                    { label: "Đang hoạt động", value: true },
+                    { label: "Ngừng hoạt động", value: false },
+                  ]}
+                />
+              </Form.Item>
+            </Col>
             <Col span={24}>
               <Form.Item label="Ảnh đại diện">
                 <Upload
                   listType="picture"
                   maxCount={1}
                   beforeUpload={(file) => {
-                    // Lưu file vào state tạm để submit cùng form
                     setSelectedFile(file);
-                    return false; // false để không tự upload
+                    return false;
                   }}
                 >
                   <Button icon={<UploadOutlined />}>Chọn ảnh mới</Button>
@@ -470,7 +462,6 @@ const StaffsPage = () => {
               </Form.Item>
             </Col>
           </Row>
-
           <Button type="primary" htmlType="submit" block>
             Cập nhật nhân viên
           </Button>

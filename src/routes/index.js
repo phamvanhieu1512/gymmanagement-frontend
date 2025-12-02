@@ -7,7 +7,6 @@ import TransactionsPage from "../pages/admin/TransactionsPage/TransactionsPage";
 import LoginPage from "../pages/Login_SignUp/LoginPage";
 import StaffDashboardPage from "../pages/staff/StaffDashboardPage/StaffDashboardPage";
 import UpdatePackagePage from "../pages/staff/UpdatePackagePage/UpdatePackagePage";
-import ReportsPage from "../pages/admin/ReportsPage/ReportsPage";
 import StaffsPage from "../pages/admin/StaffsPage/StaffsPage";
 import NotFoundPage from "../pages/NotFoundPage/NotFoundPage";
 import ForgotPasswordPage from "../pages/Login_SignUp/ForgotPasswordPage";
@@ -22,6 +21,7 @@ export const routes = [
     path: "/",
     page: LoginPage,
     isShowMenuBarAdmin: false,
+    isGuest: true,
   },
 
   {
@@ -42,7 +42,7 @@ export const routes = [
     page: DashboardPage, // Trang tổng quan
     isShowMenuBarAdmin: true,
     isPrivate: true,
-    allowedRoles: ["staff", "admin"],
+    allowedRoles: ["admin"],
   },
   {
     path: "/admin/packages",
@@ -86,7 +86,7 @@ export const routes = [
     page: StaffDashboardPage, // Trang tổng quan nhân viên (có thể là danh sách hội viên)
     isShowMenuBarStaff: true,
     isPrivate: true,
-    allowedRoles: ["staff", "admin"],
+    allowedRoles: ["staff"],
   },
   {
     path: "/staff/members",
