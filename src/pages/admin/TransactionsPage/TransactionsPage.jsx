@@ -1,4 +1,3 @@
-// TransactionsPage.jsx
 import React, { useEffect, useState } from "react";
 import {
   Table,
@@ -12,44 +11,178 @@ import {
   Row,
   Col,
   Select,
+  Modal,
+  Form,
 } from "antd";
-import axios from "axios";
-import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import {
+  EditOutlined,
+  InfoCircleOutlined,
+  ReloadOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import dayjs from "dayjs";
+import { getValidToken } from "../../../services/getValidToken";
+import * as TransactionService from "../../../services/Admin/TransactionService";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 const TransactionsPage = () => {
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [filterCustomer, setFilterCustomer] = useState("all");
+  const [filterPackage, setFilterPackage] = useState("all");
+  const [filterPaymentMethod, setFilterPaymentMethod] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [dateRange, setDateRange] = useState([]);
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const queryClient = useQueryClient();
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportType, setExportType] = useState(null);
 
-  // --- Lấy dữ liệu ---
-  const fetchTransactions = async () => {
-    setLoading(true);
+  const openDetailModal = (transaction) => {
+    setSelectedTransaction(transaction);
+    setDetailModalVisible(true);
+  };
+
+  const closeDetailModal = () => {
+    setDetailModalVisible(false);
+    setSelectedTransaction(null);
+  };
+
+  const openStatusModal = (record) => {
+    setSelectedTransaction(record);
+    setIsStatusModalOpen(true);
+  };
+
+  const closeStatusModal = () => {
+    setIsStatusModalOpen(false);
+    setSelectedTransaction(null);
+  };
+
+  const handleExportSubmit = async (values) => {
     try {
-      const res = await axios.get("/api/transactions");
-      setTransactions(res.data || []);
+      const token = await getValidToken();
+
+      const filters = {
+        from: values.dateRange[0].startOf("day").toISOString(),
+        to: values.dateRange[1].endOf("day").toISOString(),
+        paymentMethod: values.paymentMethod || null,
+        status: values.status || null,
+      };
+
+      let res;
+
+      if (exportType === "excel") {
+        res = await TransactionService.exportExcel(filters, token);
+      } else {
+        res = await TransactionService.exportPDF(filters, token);
+      }
+
+      const blob = new Blob([res.data], {
+        type: res.headers["content-type"],
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = exportType === "excel" ? "report.xlsx" : "report.pdf";
+      link.click();
+      window.URL.revokeObjectURL(url);
+
+      message.success("Xuất file thành công!");
+      setIsExportModalOpen(false);
     } catch (err) {
-      console.error(err);
-      message.error("Không thể tải danh sách giao dịch.");
-    } finally {
-      setLoading(false);
+      console.log(err);
+      message.error("Xuất file thất bại!");
     }
   };
 
-  useEffect(() => {
-    fetchTransactions();
-  }, []);
+  const getAllTransactions = async () => {
+    const token = await getValidToken();
+    if (!token)
+      return { status: "ERROR", message: "Token không hợp lệ", data: [] };
 
-  // --- Xử lý filter & search ---
+    return TransactionService.getAllTransactions(token);
+  };
+
+  const {
+    isLoading,
+    data: transactionsData,
+    refetch,
+  } = useQuery({
+    queryKey: ["transactions"],
+    queryFn: getAllTransactions,
+  });
+
+  const handleUpdateStatus = async (values) => {
+    try {
+      const token = await getValidToken();
+
+      const res = await TransactionService.updateTransaction(
+        selectedTransaction.id,
+        values,
+        token
+      );
+
+      if (res.status === "OK") {
+        message.success("Cập nhật giao dịch thành công");
+        closeStatusModal();
+        queryClient.invalidateQueries(["transactions"]);
+      } else {
+        message.error(res.message);
+      }
+    } catch (err) {
+      message.error("Lỗi khi cập nhật giao dịch");
+      console.error(err);
+    }
+  };
+
+  const transactions = (transactionsData?.data || []).map((tx) => ({
+    id: tx._id,
+    transactionCode: tx.transactionCode || "N/A",
+
+    customerName: tx.userId?.fullName || "Không rõ",
+    customerId: tx.userId?._id,
+    customerEmail: tx.userId?.email || "Không rõ",
+    customerPhone: tx.userId?.phone || "Không rõ",
+
+    packageName: tx.packageId?.name || "Không rõ",
+    packageId: tx.packageId?._id,
+    packageDescription: tx.packageId?.description || "",
+    packagePrice: tx.packageId?.price || 0,
+
+    membershipId: tx.membershipId?._id || null,
+    membershipStatus: tx.membershipId?.status || "",
+    membershipStart: tx.membershipId?.startDate || "",
+    membershipEnd: tx.membershipId?.endDate || "",
+
+    amount: tx.amount,
+    paymentMethod: tx.paymentMethod,
+    status: tx.status,
+    date: tx.transactionDate,
+
+    createdAt: tx.createdAt,
+    updatedAt: tx.updatedAt,
+  }));
+
   const filteredData = transactions.filter((tx) => {
     const matchSearch =
-      tx.customerName?.toLowerCase().includes(search.toLowerCase()) ||
-      tx.packageName?.toLowerCase().includes(search.toLowerCase());
+      tx.customerName.toLowerCase().includes(search.toLowerCase()) ||
+      tx.packageName.toLowerCase().includes(search.toLowerCase());
+
+    const matchCustomer =
+      filterCustomer === "all" ? true : tx.customerId === filterCustomer;
+
+    const matchPackage =
+      filterPackage === "all" ? true : tx.packageId === filterPackage;
+
+    const matchPayment =
+      filterPaymentMethod === "all"
+        ? true
+        : tx.paymentMethod === filterPaymentMethod;
 
     const matchStatus =
       filterStatus === "all" ? true : tx.status === filterStatus;
@@ -60,7 +193,14 @@ const TransactionsPage = () => {
           dayjs(tx.date).isBefore(dateRange[1], "day")
         : true;
 
-    return matchSearch && matchStatus && matchDate;
+    return (
+      matchSearch &&
+      matchCustomer &&
+      matchPackage &&
+      matchPayment &&
+      matchStatus &&
+      matchDate
+    );
   });
 
   const columns = [
@@ -121,6 +261,21 @@ const TransactionsPage = () => {
         }
       },
     },
+    {
+      title: "Hành động",
+      key: "action",
+      render: (_, record) => (
+        <Space>
+          <Button type="link" onClick={() => openDetailModal(record)}>
+            <InfoCircleOutlined style={{ fontSize: "20px" }} />
+          </Button>
+
+          <Button type="link" onClick={() => openStatusModal(record)}>
+            <EditOutlined style={{ fontSize: "20px" }} />
+          </Button>
+        </Space>
+      ),
+    },
   ];
 
   return (
@@ -128,33 +283,103 @@ const TransactionsPage = () => {
       <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
         <Col>
           <h2 style={{ margin: 0 }}>Quản lý giao dịch</h2>
-          <div style={{ color: "#666", marginTop: 6 }}>
-            Xem lịch sử thanh toán, kiểm tra trạng thái và lọc theo ngày.
-          </div>
         </Col>
-        <Col>
+
+        <Space>
           <Button
-            icon={<ReloadOutlined />}
-            onClick={fetchTransactions}
-            loading={loading}
+            type="primary"
+            onClick={() => {
+              setExportType("excel");
+              setIsExportModalOpen(true);
+            }}
           >
-            Tải lại
+            Xuất Excel
           </Button>
-        </Col>
+
+          <Button
+            type="default"
+            onClick={() => {
+              setExportType("pdf");
+              setIsExportModalOpen(true);
+            }}
+          >
+            Xuất PDF
+          </Button>
+        </Space>
       </Row>
 
-      {/* Bộ lọc */}
       <Card style={{ marginBottom: 16 }}>
         <Row gutter={[12, 12]}>
           <Col xs={24} md={8}>
             <Input
-              placeholder="Tìm kiếm khách hàng hoặc gói tập..."
+              placeholder="Tìm theo khách hàng hoặc gói tập..."
               prefix={<SearchOutlined />}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               allowClear
             />
           </Col>
+
+          {/* Filter Customer */}
+          <Col xs={24} md={8}>
+            <Select
+              value={filterCustomer}
+              onChange={setFilterCustomer}
+              style={{ width: "100%" }}
+              placeholder="Lọc theo khách hàng"
+              allowClear
+            >
+              <Option value="all">Tất cả khách hàng</Option>
+              {transactions
+                .map((t) => ({ name: t.customerName, id: t.customerId }))
+                .filter(
+                  (v, i, a) => a.findIndex((x) => x.id === v.id) === i // unique
+                )
+                .map((user) => (
+                  <Option key={user.id} value={user.id}>
+                    {user.name}
+                  </Option>
+                ))}
+            </Select>
+          </Col>
+
+          {/* Filter Package */}
+          <Col xs={24} md={8}>
+            <Select
+              value={filterPackage}
+              onChange={setFilterPackage}
+              style={{ width: "100%" }}
+              placeholder="Lọc theo gói tập"
+            >
+              <Option value="all">Tất cả gói tập</Option>
+              {transactions
+                .map((t) => ({ name: t.packageName, id: t.packageId }))
+                .filter(
+                  (v, i, a) => a.findIndex((x) => x.id === v.id) === i // unique
+                )
+                .map((pkg) => (
+                  <Option key={pkg.id} value={pkg.id}>
+                    {pkg.name}
+                  </Option>
+                ))}
+            </Select>
+          </Col>
+
+          {/* Filter Payment Method */}
+          <Col xs={24} md={8}>
+            <Select
+              value={filterPaymentMethod}
+              onChange={setFilterPaymentMethod}
+              style={{ width: "100%" }}
+            >
+              <Option value="all">Tất cả phương thức</Option>
+              <Option value="cash">Tiền mặt</Option>
+              <Option value="bank">Chuyển khoản</Option>
+              <Option value="momo">Momo</Option>
+            </Select>
+          </Col>
+
+          {/* Filter Status */}
           <Col xs={24} md={8}>
             <Select
               value={filterStatus}
@@ -162,11 +387,13 @@ const TransactionsPage = () => {
               style={{ width: "100%" }}
             >
               <Option value="all">Tất cả trạng thái</Option>
-              <Option value="completed">Hoàn tất</Option>
               <Option value="pending">Đang xử lý</Option>
+              <Option value="completed">Hoàn tất</Option>
               <Option value="failed">Thất bại</Option>
             </Select>
           </Col>
+
+          {/* Date Range */}
           <Col xs={24} md={8}>
             <RangePicker
               style={{ width: "100%" }}
@@ -183,11 +410,214 @@ const TransactionsPage = () => {
         <Table
           dataSource={filteredData}
           columns={columns}
-          rowKey={(r) => r._id || r.id}
-          loading={loading}
+          rowKey={(r) => r.id}
+          loading={isLoading}
           pagination={{ pageSize: 10 }}
         />
       </Card>
+
+      <Modal
+        title="Chi tiết giao dịch"
+        open={detailModalVisible}
+        onCancel={closeDetailModal}
+        footer={[<Button onClick={closeDetailModal}>Đóng</Button>]}
+        width={600}
+      >
+        {selectedTransaction && (
+          <div style={{ lineHeight: "26px" }}>
+            {/* MÃ GIAO DỊCH */}
+            <div style={{ marginBottom: 16 }}>
+              <h3 style={{ marginBottom: 6 }}>Mã giao dịch</h3>
+              <Card size="small">
+                <b>{selectedTransaction.transactionCode || "N/A"}</b>
+              </Card>
+            </div>
+
+            {/* THÔNG TIN KHÁCH HÀNG */}
+            <div style={{ marginBottom: 16 }}>
+              <h3 style={{ marginBottom: 6 }}>Thông tin khách hàng</h3>
+              <Card size="small">
+                <p>
+                  <b>Họ tên:</b> {selectedTransaction.customerName}
+                </p>
+                <p>
+                  <b>Email:</b> {selectedTransaction.customerEmail}
+                </p>
+                <p>
+                  <b>Số điện thoại:</b> {selectedTransaction.customerPhone}
+                </p>
+              </Card>
+            </div>
+
+            {/* THÔNG TIN GÓI TẬP */}
+            <div style={{ marginBottom: 16 }}>
+              <h3 style={{ marginBottom: 6 }}>Thông tin gói tập</h3>
+              <Card size="small">
+                <p>
+                  <b>Tên gói:</b> {selectedTransaction.packageName}
+                </p>
+                <p>
+                  <b>Giá gốc:</b>{" "}
+                  {selectedTransaction.packagePrice?.toLocaleString()} ₫
+                </p>
+                <p>
+                  <b>Mô tả:</b>{" "}
+                  {selectedTransaction.packageDescription || "Không có mô tả"}
+                </p>
+              </Card>
+            </div>
+
+            {/* Membership */}
+            {selectedTransaction.membershipId && (
+              <div style={{ marginBottom: 16 }}>
+                <h3 style={{ marginBottom: 6 }}>Membership</h3>
+                <Card size="small">
+                  <p>
+                    <b>ID:</b> {selectedTransaction.membershipId}
+                  </p>
+                  <p>
+                    <b>Trạng thái:</b> {selectedTransaction.membershipStatus}
+                  </p>
+                  <p>
+                    <b>Ngày bắt đầu:</b>{" "}
+                    {dayjs(selectedTransaction.membershipStart).format(
+                      "DD/MM/YYYY"
+                    )}
+                  </p>
+                  <p>
+                    <b>Ngày kết thúc:</b>{" "}
+                    {dayjs(selectedTransaction.membershipEnd).format(
+                      "DD/MM/YYYY"
+                    )}
+                  </p>
+                </Card>
+              </div>
+            )}
+
+            {/* THÔNG TIN THANH TOÁN */}
+            <div style={{ marginBottom: 16 }}>
+              <h3 style={{ marginBottom: 6 }}>Thông tin thanh toán</h3>
+              <Card size="small">
+                <p>
+                  <b>Số tiền thanh toán:</b>{" "}
+                  {selectedTransaction.amount.toLocaleString()} ₫
+                </p>
+                <p>
+                  <b>Phương thức:</b> {selectedTransaction.paymentMethod}
+                </p>
+                <p>
+                  <b>Trạng thái:</b> {selectedTransaction.status}
+                </p>
+                <p>
+                  <b>Ngày giao dịch:</b>{" "}
+                  {dayjs(selectedTransaction.date).format("DD/MM/YYYY HH:mm")}
+                </p>
+              </Card>
+            </div>
+
+            {/* THỜI GIAN HỆ THỐNG */}
+            <div style={{ marginBottom: 16 }}>
+              <h3 style={{ marginBottom: 6 }}>Thời gian hệ thống</h3>
+              <Card size="small">
+                <p>
+                  <b>Ngày tạo:</b>{" "}
+                  {dayjs(selectedTransaction.createdAt).format(
+                    "DD/MM/YYYY HH:mm"
+                  )}
+                </p>
+                <p>
+                  <b>Cập nhật cuối:</b>{" "}
+                  {dayjs(selectedTransaction.updatedAt).format(
+                    "DD/MM/YYYY HH:mm"
+                  )}
+                </p>
+              </Card>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        title="Cập nhật trạng thái giao dịch"
+        open={isStatusModalOpen}
+        onCancel={closeStatusModal}
+        footer={null}
+      >
+        <Form
+          layout="vertical"
+          onFinish={handleUpdateStatus}
+          initialValues={{
+            status: selectedTransaction?.status,
+            paymentMethod: selectedTransaction?.paymentMethod,
+          }}
+        >
+          <Form.Item label="Trạng thái" name="status">
+            <Select>
+              <Select.Option value="pending">Pending</Select.Option>
+              <Select.Option value="completed">Completed</Select.Option>
+              <Select.Option value="failed">Failed</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Phương thức thanh toán" name="paymentMethod">
+            <Select>
+              <Select.Option value="cash">Tiền mặt</Select.Option>
+              <Select.Option value="banking">Chuyển khoản</Select.Option>
+              <Select.Option value="momo">Momo</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item>
+            <Button type="primary" htmlType="submit" block>
+              Cập nhật
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Xuất báo cáo giao dịch"
+        open={isExportModalOpen}
+        onCancel={() => setIsExportModalOpen(false)}
+        footer={null}
+      >
+        <Form layout="vertical" onFinish={handleExportSubmit}>
+          {/* Date Range */}
+          <Form.Item
+            label="Khoảng thời gian"
+            name="dateRange"
+            rules={[{ required: true }]}
+          >
+            <RangePicker format="DD/MM/YYYY" />
+          </Form.Item>
+
+          {/* Payment Method */}
+          <Form.Item label="Phương thức thanh toán" name="paymentMethod">
+            <Select allowClear>
+              <Select.Option value="credit_card">Credit Card</Select.Option>
+              <Select.Option value="momo">Momo</Select.Option>
+              <Select.Option value="paypal">Paypal</Select.Option>
+              <Select.Option value="bank_transfer">Bank Transfer</Select.Option>
+              <Select.Option value="other">Other</Select.Option>
+            </Select>
+          </Form.Item>
+
+          {/* Status */}
+          <Form.Item label="Trạng thái giao dịch" name="status">
+            <Select allowClear>
+              <Select.Option value="pending">Pending</Select.Option>
+              <Select.Option value="completed">Completed</Select.Option>
+              <Select.Option value="failed">Failed</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item>
+            <Button type="primary" htmlType="submit" block>
+              Xuất {exportType === "excel" ? "Excel" : "PDF"}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

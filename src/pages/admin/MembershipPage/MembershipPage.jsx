@@ -10,19 +10,28 @@ import {
   List,
   Empty,
   message,
+  Select,
+  DatePicker,
 } from "antd";
-import { useQuery } from "@tanstack/react-query";
 import * as MembershipService from "../../../services/Admin/MembershipService";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getValidToken } from "../../../services/getValidToken";
 import dayjs from "dayjs";
 
 const MembershipPage = () => {
   const [visibleDetail, setVisibleDetail] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [visibleRenew, setVisibleRenew] = useState(false);
+  const [membershipToRenew, setMembershipToRenew] = useState(null);
+  const queryClient = useQueryClient();
+  const [renewData, setRenewData] = useState({
+    packageId: "",
+    trainerId: "",
+    startDate: dayjs(),
+  });
 
   const baseURL = "http://localhost:5000";
 
-  // fetch memberships (giữ nguyên hàm của bạn)
   const getAllMembership = async () => {
     const token = await getValidToken();
     if (!token) return { status: "ERROR", data: [] };
@@ -35,10 +44,9 @@ const MembershipPage = () => {
     queryFn: getAllMembership,
   });
 
-  // map membership để hiển thị table (lưu cả object gốc)
   const memberships = (data?.data || []).map((m) => ({
     _id: m._id,
-    raw: m, // keep populated document for modal
+    raw: m,
     userName: m.userId?.fullName || "Không rõ",
     packageName: m.packageId?.name || "Không rõ",
     trainerName: m.trainerId?.fullName || "-",
@@ -66,17 +74,14 @@ const MembershipPage = () => {
     setSelected(null);
   };
 
-  // Nếu membership đã populate userId/packageId/trainerId, ta có thể truy cập trực tiếp:
-  // selected.userId.fullName, selected.packageId.name, selected.trainerId.fullName
-
   const columns = [
     {
       title: "Hội viên",
       dataIndex: "userName",
       ellipsis: {
-        showTitle: true, // hover sẽ hiển thị tooltip
+        showTitle: true,
       },
-      render: (text) => <div style={{ maxWidth: 150 }}>{text}</div>, // giới hạn width
+      render: (text) => <div style={{ maxWidth: 150 }}>{text}</div>,
     },
     {
       title: "Gói tập",
@@ -131,7 +136,10 @@ const MembershipPage = () => {
           <Button
             size="small"
             type="primary"
-            onClick={() => alert(`Gia hạn ${record.userName}`)}
+            onClick={() => {
+              setMembershipToRenew(record.raw);
+              setVisibleRenew(true);
+            }}
           >
             Gia hạn
           </Button>
@@ -144,7 +152,7 @@ const MembershipPage = () => {
           </Button>
         </Space>
       ),
-      width: 250, // đặt chiều rộng tối thiểu
+      width: 250,
     },
   ];
 
@@ -348,6 +356,89 @@ const MembershipPage = () => {
         ) : (
           <div>Đang tải...</div>
         )}
+      </Modal>
+
+      <Modal
+        open={visibleRenew}
+        title="Gia hạn Membership"
+        onCancel={() => {
+          setVisibleRenew(false);
+          setMembershipToRenew(null);
+        }}
+        onOk={async () => {
+          try {
+            const token = await getValidToken();
+            if (!token) return message.error("Không có token");
+
+            const payload = {
+              membershipId: membershipToRenew._id,
+              packageId: renewData.packageId,
+              trainerId: renewData.trainerId || null,
+              startDate: renewData.startDate,
+            };
+
+            const res = await MembershipService.renewMembership(
+              membershipToRenew._id,
+              payload,
+              token
+            );
+
+            if (res.status === "OK") {
+              message.success("Gia hạn thành công!");
+              setVisibleRenew(false);
+              setMembershipToRenew(null);
+              queryClient.invalidateQueries(["get-all-memberships"]);
+            } else {
+              message.error(res.message);
+            }
+          } catch (e) {
+            message.error("Lỗi khi gia hạn!");
+          }
+        }}
+      >
+        {membershipToRenew ? (
+          <>
+            <p>
+              Hội viên: <b>{membershipToRenew.userId.fullName}</b>
+            </p>
+
+            <div style={{ marginTop: 12 }}>
+              <label>Chọn gói mới</label>
+              <Select
+                style={{ width: "100%" }}
+                value={renewData.packageId}
+                onChange={(v) => setRenewData({ ...renewData, packageId: v })}
+                options={(data?.packages || []).map((p) => ({
+                  label: p.name,
+                  value: p._id,
+                }))}
+              />
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <label>Chọn Trainer (tuỳ chọn)</label>
+              <Select
+                style={{ width: "100%" }}
+                value={renewData.trainerId}
+                allowClear
+                onChange={(v) => setRenewData({ ...renewData, trainerId: v })}
+                options={(data?.trainers || []).map((t) => ({
+                  label: t.fullName,
+                  value: t._id,
+                }))}
+              />
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <label>Ngày bắt đầu</label>
+              <DatePicker
+                style={{ width: "100%" }}
+                value={renewData.startDate}
+                onChange={(d) => setRenewData({ ...renewData, startDate: d })}
+              />
+            </div>
+          </>
+        ) : null}
       </Modal>
     </div>
   );
