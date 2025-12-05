@@ -79,8 +79,8 @@ const DefaultComponent = ({ children }) => {
       label: "Quản lý thông báo",
     },
     {
-      key: "/admin/messages",
-      icon: <MessageOutlined />,
+      key: "/admin/boxes",
+      icon: <MessageOutlined />, 
       label: "Nhắn tin",
     },
     { key: "logout", icon: <LogoutOutlined />, label: "Đăng xuất" },

@@ -1,53 +1,45 @@
 import React, { useEffect, useRef, useState } from "react";
- 
+
 function MessagePage({
-
-  peerId = "68ff36d578fc9208ee291a83",
-  userId = "68e79f4f6b9ee7a03723e90a",
-
+  userId = "68ff36d578fc9208ee291a83",
+  peerId = "68e79f4f6b9ee7a03723e90a",
 }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const ws = useRef(null);
   const messagesEndRef = useRef(null);
 
-  // Tự động kéo xuống cuối
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Lấy lịch sử tin nhắn từ backend
   const loadHistory = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/message", {
-        method: "POST", // backend đang lấy req.body ❗
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId }),
-      });
+  try {
+    // Gửi userId qua query string
+    const res = await fetch(`http://localhost:5000/api/customer/message/${peerId}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
 
-      const result = await res.json();
-      if (result.success) {
-        setMessages(result.data);
-      }
-    } catch (err) {
-      console.error("Load history error:", err);
-    }
-  };
+    const result = await res.json();
+    console.log(result);
 
-  useEffect(() => {
-    loadHistory();
-  }, [userId]);
+    if (result.success) setMessages(result.data);
+  } catch (err) {
+    console.error("Load history error:", err);
+  }
+};
 
-  // Kết nối WebSocket
+useEffect(() => {
+  console.log("Tải lịch sử tin nhắn");
+  loadHistory();
+}, [userId]);
+
+
   useEffect(() => {
     ws.current = new WebSocket("ws://192.168.39.225:5000");
 
-
     ws.current.onopen = () => {
-      console.log("WS Connected");
-
       ws.current.send(
         JSON.stringify({
           type: "login",
@@ -59,7 +51,6 @@ function MessagePage({
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
-      // Chỉ nhận tin đúng đối tượng
       if (
         (data.from === peerId && data.to === userId) ||
         (data.from === userId && data.to === peerId)
@@ -69,7 +60,7 @@ function MessagePage({
     };
 
     ws.current.onerror = (err) => console.error("WS Error:", err);
-    ws.current.onclose = () => console.log("WS Closed");
+    ws.current.onclose = () => console.log("WebSocket closed");
 
     return () => ws.current.close();
   }, [userId, peerId]);
@@ -78,73 +69,218 @@ function MessagePage({
     scrollToBottom();
   }, [messages]);
 
-  // Gửi tin
   const sendMessage = () => {
-    if (!text.trim()) return;
+    const cleanText = text.trim();
+    if (!cleanText) return;
 
     const payload = {
       type: "message",
       from: userId,
       to: peerId,
-      text,
+      text: cleanText,
       timestamp: new Date().toISOString(),
     };
 
     ws.current.send(JSON.stringify(payload));
-
-    // Hiển thị ngay trên UI
-    setMessages((prev) => [...prev, payload]);
-
     setText("");
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  // Hàm format thời gian tin nhắn
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const formatDate = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday =
+      date.getDate() === now.getDate() &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear();
+    const isYesterday =
+      date.getDate() === now.getDate() - 1 &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear();
+
+    if (isToday) return "Hôm nay";
+    if (isYesterday) return "Hôm qua";
+    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+  };
+
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Chat với {peerId}</h2>
+    <div
+      style={{
+        height: "100vh",
+        padding: "20px",
+        display: "flex",
+        justifyContent: "center",
+        background: "#f0f2f5",
+      }}
+    >
+      <div
+        style={{
+          width: "750px",
+          height: "85vh",
+          background: "#ffffff",
+          borderRadius: 12,
+          boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* HEADER */}
+        <div
+          style={{
+            padding: "15px 20px",
+            borderBottom: "1px solid #e5e5e5",
+            fontSize: 16,
+            fontWeight: 600,
+            background: "#1677ff",
+            color: "white",
+            borderTopLeftRadius: 12,
+            borderTopRightRadius: 12,
+          }}
+        >
+          Chat với {peerId}
+        </div>
+
+        {/* CHAT AREA */}
+        <div
+          style={{
+            flex: 1,
+            padding: "20px",
+            background: "#f6f7f9",
+            overflowY: "auto",
+          }}
+        >
+          {messages.length === 0 ? (
+            <div
+              style={{
+                textAlign: "center",
+                color: "#999",
+                marginTop: "50%",
+              }}
+            >
+              Chưa có tin nhắn
+            </div>
+          ) : (
+            messages.map((m, i) => {
+  const isMe = m.from === userId;
+  const showDate =
+    i === 0 ||
+    new Date(m.timestamp).toDateString() !==
+      new Date(messages[i - 1].timestamp).toDateString();
+
+  // Dựa vào senderRole để đổi màu: admin = đỏ, member = xanh/đen
+  const bgColor = m.senderRole === "admin" ? "#ff4d4f" : isMe ? "#1677ff" : "#e4e6eb";
+  const textColor = m.senderRole === "admin" ? "#fff" : isMe ? "#fff" : "#000";
+
+  return (
+    <div key={i}>
+      {showDate && (
+        <div
+          style={{
+            textAlign: "center",
+            margin: "10px 0",
+            color: "#888",
+            fontSize: 12,
+          }}
+        >
+          {formatDate(m.timestamp)}
+        </div>
+      )}
 
       <div
         style={{
-          height: 400,
-          overflowY: "auto",
-          border: "1px solid #ccc",
-          padding: 10,
-          marginBottom: 10,
+          display: "flex",
+          justifyContent: isMe ? "flex-end" : "flex-start",
+          marginBottom: 8,
+          flexDirection: "column",
+          alignItems: isMe ? "flex-end" : "flex-start",
         }}
       >
-        {messages.map((m, i) => (
-          <div
-            key={i}
+        <div
+          style={{
+            maxWidth: "65%",
+            padding: "10px 14px",
+            borderRadius: 16,
+            background: bgColor,
+            color: textColor,
+            fontSize: 15,
+            lineHeight: "20px",
+          }}
+        >
+          {m.text}
+        </div>
+        <div
+          style={{
+            fontSize: 10,
+            color: "#888",
+            marginTop: 4,
+          }}
+        >
+          {formatTime(m.timestamp)}
+        </div>
+      </div>
+    </div>
+  );
+})
+
+
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* INPUT AREA */}
+        <div
+          style={{
+            padding: "12px 18px",
+            borderTop: "1px solid #e5e5e5",
+            display: "flex",
+            gap: 10,
+            background: "#fff",
+            borderBottomLeftRadius: 12,
+            borderBottomRightRadius: 12,
+          }}
+        >
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Nhập tin nhắn…"
             style={{
-              textAlign: m.from === userId ? "right" : "left",
-              marginBottom: 10,
+              flex: 1,
+              padding: "12px 15px",
+              borderRadius: 25,
+              border: "1px solid #ccc",
+              outline: "none",
+              fontSize: 15,
+            }}
+          />
+
+          <button
+            onClick={sendMessage}
+            style={{
+              padding: "12px 22px",
+              background: "#1677ff",
+              color: "#fff",
+              border: "none",
+              borderRadius: 25,
+              cursor: "pointer",
+              fontWeight: 600,
             }}
           >
-            <span
-              style={{
-                padding: 10,
-                background: m.from === userId ? "#007bff" : "#eaeaea",
-                color: m.from === userId ? "#fff" : "#000",
-                borderRadius: 6,
-                display: "inline-block",
-                maxWidth: "70%",
-              }}
-            >
-              {m.text}
-            </span>
-          </div>
-        ))}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      <div style={{ display: "flex", gap: 10 }}>
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Nhập tin nhắn..."
-          style={{ flex: 1, padding: 10 }}
-        />
-        <button onClick={sendMessage}>Gửi</button>
+            Gửi
+          </button>
+        </div>
       </div>
     </div>
   );

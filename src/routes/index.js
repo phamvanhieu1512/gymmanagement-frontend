@@ -17,6 +17,7 @@ import UserPage from "../pages/admin/UserPage/UserPage";
 import AttendancePage from "../pages/admin/AttendancePage/AttendancePage";
 import MessagePage from "../pages/admin/MessagePage/MessagePage";
 import NotificationPage from "../pages/admin/NotificationPage/NotificationPage";
+import BoxesMessage from "../pages/admin/MessagePage/BoxesMessages";
 
 export const routes = [
   {
@@ -86,10 +87,15 @@ export const routes = [
     page: NotificationPage, // Quản lý thông báo
     isShowMenuBarAdmin: true,
   },
-
+ 
   {
     path: "/admin/messages",
     page: MessagePage, // Nhắn tin
+    isShowMenuBarAdmin: true,
+  },
+  {
+    path: "/admin/boxes",
+    page: BoxesMessage, // Nhắn tin
     isShowMenuBarAdmin: true,
   },
 
