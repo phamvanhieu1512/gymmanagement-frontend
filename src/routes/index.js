@@ -15,6 +15,8 @@ import MembershipPage from "../pages/admin/MembershipPage/MembershipPage";
 import PackagePage from "../pages/admin/PackagePage/PackagePage";
 import UserPage from "../pages/admin/UserPage/UserPage";
 import AttendancePage from "../pages/admin/AttendancePage/AttendancePage";
+import MessagePage from "../pages/admin/MessagePage/MessagePage";
+import NotificationPage from "../pages/admin/NotificationPage/NotificationPage";
 
 export const routes = [
   {
@@ -77,6 +79,17 @@ export const routes = [
   {
     path: "/admin/staffs",
     page: StaffsPage, // Quản lý nhân viên
+    isShowMenuBarAdmin: true,
+  },
+  {
+    path: "/admin/notifications",
+    page: NotificationPage, // Quản lý thông báo
+    isShowMenuBarAdmin: true,
+  },
+
+  {
+    path: "/admin/messages",
+    page: MessagePage, // Nhắn tin
     isShowMenuBarAdmin: true,
   },
 

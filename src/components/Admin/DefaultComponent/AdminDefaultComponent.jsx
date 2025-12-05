@@ -8,6 +8,8 @@ import {
   UserOutlined,
   LogoutOutlined,
   CodeSandboxOutlined,
+  MessageOutlined,
+  BellOutlined,
 } from "@ant-design/icons";
 import { Button, Layout, Menu } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -70,6 +72,16 @@ const DefaultComponent = ({ children }) => {
       key: "/admin/staffs",
       icon: <UserOutlined />,
       label: "Quản lý nhân viên",
+    },
+    {
+      key: "/admin/notifications",
+      icon: <BellOutlined />,
+      label: "Quản lý thông báo",
+    },
+    {
+      key: "/admin/messages",
+      icon: <MessageOutlined />,
+      label: "Nhắn tin",
     },
     { key: "logout", icon: <LogoutOutlined />, label: "Đăng xuất" },
   ];
