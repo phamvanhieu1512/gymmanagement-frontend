@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
  
 function MessagePage({
-  userId = "68ff36d578fc9208ee291a83",
-  peerId = "68e79f4f6b9ee7a03723e90a",
-  
+
+  peerId = "68ff36d578fc9208ee291a83",
+  userId = "68e79f4f6b9ee7a03723e90a",
+
 }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
@@ -41,7 +42,8 @@ function MessagePage({
 
   // Kết nối WebSocket
   useEffect(() => {
-    ws.current = new WebSocket("ws://localhost:5000");
+    ws.current = new WebSocket("ws://192.168.39.225:5000");
+
 
     ws.current.onopen = () => {
       console.log("WS Connected");
