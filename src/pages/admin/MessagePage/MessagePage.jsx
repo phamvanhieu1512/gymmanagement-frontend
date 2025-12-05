@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-
+ 
 function MessagePage({
   userId = "68ff36d578fc9208ee291a83",
   peerId = "68e79f4f6b9ee7a03723e90a",
+  
 }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
