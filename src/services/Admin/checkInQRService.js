@@ -15,6 +15,7 @@ export const createQR = async (token, body) => {
     throw error;
   }
 };
+
 export const getAllMembers = async (access_token) => {
   try {
     const res = await axios.get(
