@@ -11,7 +11,8 @@ import {
   MessageOutlined,
   BellOutlined,
 } from "@ant-design/icons";
-import { Button, Layout, Menu } from "antd";
+import { Button, Layout, Menu, Modal } from "antd";
+
 import { useNavigate, useLocation } from "react-router-dom";
 import logoTrang from "../../../assets/images/logo/logo_trang.png";
 import { StyledMenu } from "./styleDefaultComponent";
@@ -80,16 +81,25 @@ const DefaultComponent = ({ children }) => {
     },
     {
       key: "/admin/boxes",
-      icon: <MessageOutlined />, 
+      icon: <MessageOutlined />,
       label: "Nhắn tin",
     },
     { key: "logout", icon: <LogoutOutlined />, label: "Đăng xuất" },
   ];
 
-  const handleMenuClick = async (e) => {
-    // e.domEvent.preventDefault();
+  const handleMenuClick = (e) => {
     if (e.key === "logout") {
-      await handleLogout();
+      Modal.confirm({
+        title: "Xác nhận đăng xuất",
+        content: "Bạn có chắc chắn muốn đăng xuất không?",
+        okText: "Có",
+        cancelText: "Không",
+        centered: true,
+        okType: "danger",
+        onOk: async () => {
+          await handleLogout();
+        },
+      });
     } else {
       navigate(e.key);
     }
@@ -102,7 +112,7 @@ const DefaultComponent = ({ children }) => {
       <Header
         style={{
           height: 70,
-          background: "#000000",
+          background: "#42A5F5",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -153,7 +163,7 @@ const DefaultComponent = ({ children }) => {
           collapsible
           collapsed={collapsed}
           style={{
-            background: "#B22222",
+            background: "#FFFFFF",
             height: "calc(100vh - 70px)", // Trừ chiều cao của header
             position: "fixed",
             left: 0,
@@ -173,7 +183,7 @@ const DefaultComponent = ({ children }) => {
           style={{
             marginLeft: collapsed ? 80 : 200, // đẩy nội dung qua phải theo độ rộng sidebar
             transition: "all 0.3s",
-            background: "#1F2A40",
+            background: "#374a6fff",
           }}
         >
           <Content
@@ -181,7 +191,7 @@ const DefaultComponent = ({ children }) => {
               margin: 0,
               padding: 24,
               minHeight: "calc(100vh - 70px)",
-              background: "#1F2A40",
+              background: "#374a6fff",
               color: "#FFFFFF",
             }}
           >

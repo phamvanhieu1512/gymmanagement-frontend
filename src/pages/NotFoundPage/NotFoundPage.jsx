@@ -35,7 +35,7 @@ const NotFoundPage = () => {
               fontWeight: 600,
             }}
           >
-            Quay lại trang chủ
+            Quay lại
           </Button>
         }
         style={{

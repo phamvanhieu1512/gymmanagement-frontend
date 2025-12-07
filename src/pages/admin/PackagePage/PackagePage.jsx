@@ -15,7 +15,12 @@ import {
   message,
 } from "antd";
 import React, { useState } from "react";
-import { EditOutlined, PlusOutlined, DeleteOutlined } from "@ant-design/icons";
+import {
+  EditOutlined,
+  PlusOutlined,
+  DeleteOutlined,
+  StopOutlined,
+} from "@ant-design/icons";
 import * as PackageService from "../../../services/Admin/PackageService";
 import { useMutationHook } from "../../../hooks/useMutationHook";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -382,12 +387,11 @@ const PackagePage = () => {
             render: (_, record) => (
               <Space>
                 <Button
-                  type="default"
-                  icon={<EditOutlined />}
+                  type="link"
                   onClick={() => openEditModal(record)}
                   size="small"
                 >
-                  Sửa
+                  <EditOutlined style={{ fontSize: "20px" }} />
                 </Button>
                 <Popconfirm
                   title="Xác nhận Ngừng gói này?"
@@ -395,8 +399,8 @@ const PackagePage = () => {
                   okText="Ngừng"
                   cancelText="Hủy"
                 >
-                  <Button danger icon={<DeleteOutlined />} size="small">
-                    Ngừng
+                  <Button danger type="link" size="small">
+                    <StopOutlined style={{ fontSize: "20px" }} />
                   </Button>
                 </Popconfirm>
               </Space>

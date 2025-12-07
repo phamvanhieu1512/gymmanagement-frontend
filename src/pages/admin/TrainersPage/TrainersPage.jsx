@@ -18,6 +18,7 @@ import {
   EditOutlined,
   PlusOutlined,
   InfoCircleOutlined,
+  KeyOutlined,
 } from "@ant-design/icons";
 import * as TrainerService from "../../../services/Admin/TrainerService";
 import { useMutationHook } from "../../../hooks/useMutationHook";
@@ -148,6 +149,25 @@ const TrainersPage = () => {
     setIsEditModalOpen(false);
     form.resetFields();
     setSelectedFile(null);
+  };
+
+  const handleResetPassword = async (email) => {
+    try {
+      const token = await getValidToken();
+
+      const res = await TrainerService.resetPasswordTrainer({ email }, token);
+
+      if (res.status === "OK") {
+        message.success(
+          `Reset mật khẩu thành công! Mật khẩu mới: ${res.newPassword}`
+        );
+      } else {
+        message.error(res.message || "Reset mật khẩu thất bại");
+      }
+    } catch (error) {
+      message.error("Lỗi hệ thống! Không thể reset mật khẩu");
+      console.error(error);
+    }
   };
 
   const onFinish = (values) => {
@@ -527,6 +547,14 @@ const TrainersPage = () => {
                       {selectedUser.trainerProfile.ratingAverage || 0}
                     </p>
                   </Col>
+                  <Button
+                    onClick={() => handleResetPassword(selectedUser.email)}
+                    type="primary"
+                    danger
+                    block
+                  >
+                    <KeyOutlined /> Reset Mật Khẩu
+                  </Button>
                 </Row>
               </>
             )}

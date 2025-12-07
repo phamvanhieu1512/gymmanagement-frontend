@@ -20,6 +20,7 @@ import {
   PlusOutlined,
   InfoCircleOutlined,
   UploadOutlined,
+  KeyOutlined,
 } from "@ant-design/icons";
 import * as StaffService from "../../../services/Admin/StaffService";
 import { useMutationHook } from "../../../hooks/useMutationHook";
@@ -83,6 +84,25 @@ const StaffsPage = () => {
       isActive: staff.isActive,
     });
     setIsEditModalOpen(true);
+  };
+
+  const handleResetPassword = async (email) => {
+    try {
+      const token = await getValidToken();
+
+      const res = await StaffService.resetPasswordStaff({ email }, token);
+
+      if (res.status === "OK") {
+        message.success(
+          `Reset mật khẩu thành công! Mật khẩu mới: ${res.newPassword}`
+        );
+      } else {
+        message.error(res.message || "Reset mật khẩu thất bại");
+      }
+    } catch (error) {
+      message.error("Lỗi hệ thống! Không thể reset mật khẩu");
+      console.error(error);
+    }
   };
 
   const handleEditStaff = async (values) => {
@@ -347,6 +367,14 @@ const StaffsPage = () => {
               <strong>Trạng thái:</strong>{" "}
               {selectedStaff.isActive ? "Hoạt động" : "Khóa"}
             </p>
+            <Button
+              onClick={() => handleResetPassword(selectedStaff.email)}
+              type="primary"
+              danger
+              block
+            >
+              <KeyOutlined /> Reset Mật Khẩu
+            </Button>
           </div>
         )}
       </Modal>

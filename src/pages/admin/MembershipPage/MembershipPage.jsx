@@ -12,8 +12,18 @@ import {
   message,
   Select,
   DatePicker,
+  Input,
 } from "antd";
+import {
+  EditOutlined,
+  InfoCircleOutlined,
+  ReloadOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import * as MembershipService from "../../../services/Admin/MembershipService";
+import * as PackageService from "../../../services/Admin/PackageService";
+import * as TrainerService from "../../../services/Admin/TrainerService";
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getValidToken } from "../../../services/getValidToken";
 import dayjs from "dayjs";
@@ -29,6 +39,13 @@ const MembershipPage = () => {
     trainerId: "",
     startDate: dayjs(),
   });
+  const [filters, setFilters] = useState({
+    search: "",
+    status: "all",
+    packageId: "all",
+    trainerId: "all",
+    dateRange: null,
+  });
 
   const baseURL = "http://localhost:5000";
 
@@ -39,9 +56,33 @@ const MembershipPage = () => {
     return res;
   };
 
+  const getAllPackages = async () => {
+    const token = await getValidToken();
+    if (!token) return { status: "ERROR", data: [] };
+    const res = await PackageService.getAllPackage(token);
+    return res;
+  };
+
+  const getAllTrainers = async () => {
+    const token = await getValidToken();
+    if (!token) return { status: "ERROR", data: [] };
+    const res = await TrainerService.getAllTrainers(token);
+    return res;
+  };
+
   const { data, isLoading } = useQuery({
     queryKey: ["get-all-memberships"],
     queryFn: getAllMembership,
+  });
+
+  const { data: pkgData } = useQuery({
+    queryKey: ["get-all-packages"],
+    queryFn: getAllPackages,
+  });
+
+  const { data: trainerData } = useQuery({
+    queryKey: ["get-all-trainers"],
+    queryFn: getAllTrainers,
   });
 
   const memberships = (data?.data || []).map((m) => ({
@@ -73,6 +114,51 @@ const MembershipPage = () => {
     setVisibleDetail(false);
     setSelected(null);
   };
+
+  const filteredMemberships = memberships.filter((m) => {
+    // Lọc theo tìm kiếm tên hội viên
+    if (
+      filters.search &&
+      !m.userName.toLowerCase().includes(filters.search.toLowerCase())
+    ) {
+      return false;
+    }
+
+    // Lọc theo trạng thái
+    if (filters.status !== "all" && m.status !== filters.status) {
+      return false;
+    }
+
+    // Lọc theo gói tập
+    // Lọc theo gói tập
+    if (
+      filters.packageId !== "all" &&
+      m.raw.packageId?._id !== filters.packageId
+    ) {
+      return false;
+    }
+
+    // Lọc theo trainer
+    if (
+      filters.trainerId !== "all" &&
+      m.raw.trainerId?._id !== filters.trainerId
+    ) {
+      return false;
+    }
+
+    // Lọc theo ngày bắt đầu
+    if (filters.dateRange) {
+      const start = dayjs(m.raw.startDate);
+      const from = filters.dateRange[0];
+      const to = filters.dateRange[1];
+
+      if (!(start.isAfter(from) && start.isBefore(to))) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 
   const columns = [
     {
@@ -130,10 +216,14 @@ const MembershipPage = () => {
       align: "center",
       render: (record) => (
         <Space style={{ whiteSpace: "nowrap" }}>
-          <Button size="small" onClick={() => openDetailModal(record)}>
-            Chi tiết
-          </Button>
           <Button
+            type="link"
+            size="small"
+            onClick={() => openDetailModal(record)}
+          >
+            <InfoCircleOutlined style={{ fontSize: "20px" }} />
+          </Button>
+          {/* <Button
             size="small"
             type="primary"
             onClick={() => {
@@ -149,10 +239,10 @@ const MembershipPage = () => {
             onClick={() => alert(`Hủy ${record.userName}`)}
           >
             Hủy
-          </Button>
+          </Button> */}
         </Space>
       ),
-      width: 250,
+      width: 100,
     },
   ];
 
@@ -160,9 +250,76 @@ const MembershipPage = () => {
     <div style={{ padding: 24 }}>
       <h2 style={{ color: "#fff" }}>Quản lý hội viên</h2>
 
+      <div
+        style={{
+          background: "#fff",
+          padding: 16,
+          borderRadius: 8,
+          marginBottom: 16,
+        }}
+      >
+        <Space wrap>
+          {/* Tìm kiếm tên hội viên */}
+          <Input
+            placeholder="Tìm theo tên hội viên..."
+            style={{ width: 220 }}
+            value={filters.search}
+            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+          />
+
+          {/* Lọc trạng thái */}
+          <Select
+            style={{ width: 160 }}
+            value={filters.status}
+            onChange={(v) => setFilters({ ...filters, status: v })}
+            options={[
+              { label: "Tất cả trạng thái", value: "all" },
+              { label: "Active", value: "active" },
+              { label: "Pending", value: "pending" },
+              { label: "Expired", value: "expired" },
+              { label: "Cancelled", value: "cancelled" },
+            ]}
+          />
+
+          {/* Lọc theo gói tập */}
+          <Select
+            style={{ width: 200 }}
+            value={filters.packageId}
+            onChange={(v) => setFilters({ ...filters, packageId: v })}
+            options={[
+              { label: "Tất cả gói tập", value: "all" },
+              ...(pkgData?.data || []).map((p) => ({
+                label: p.name,
+                value: p._id,
+              })),
+            ]}
+          />
+
+          {/* Lọc theo Trainer */}
+          <Select
+            style={{ width: 200 }}
+            value={filters.trainerId}
+            onChange={(v) => setFilters({ ...filters, trainerId: v })}
+            options={[
+              { label: "Tất cả trainer", value: "all" },
+              ...(trainerData?.data || []).map((t) => ({
+                label: t.fullName,
+                value: t._id,
+              })),
+            ]}
+          />
+
+          {/* Lọc theo ngày bắt đầu */}
+          <DatePicker.RangePicker
+            value={filters.dateRange}
+            onChange={(v) => setFilters({ ...filters, dateRange: v })}
+          />
+        </Space>
+      </div>
+
       <Table
         loading={isLoading}
-        dataSource={memberships}
+        dataSource={filteredMemberships}
         columns={columns}
         rowKey="_id"
         bordered

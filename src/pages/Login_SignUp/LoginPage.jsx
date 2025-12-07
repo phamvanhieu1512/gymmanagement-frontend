@@ -77,7 +77,7 @@ const LoginPage = () => {
       {contextHolder}
       <LoginCard>
         <Logo src={logoTrang} alt="Gym Logo" />
-        <Title level={3} style={{ color: "#B22222" }}>
+        <Title level={3} style={{ color: "#374a6fff" }}>
           Đăng nhập
         </Title>
         <Text type="secondary">Quản lý phòng tập GYM</Text>
@@ -106,19 +106,6 @@ const LoginPage = () => {
           >
             <Input.Password placeholder="Nhập mật khẩu" />
           </Form.Item>
-
-          <div style={{ textAlign: "right", marginBottom: 16 }}>
-            <div
-              onClick={handleForgotPassword}
-              style={{
-                color: "#B22222",
-                fontWeight: 500,
-                cursor: "pointer",
-              }}
-            >
-              Quên mật khẩu?
-            </div>
-          </div>
 
           <Form.Item>
             <StyledButton htmlType="submit" disabled={isLoading}>

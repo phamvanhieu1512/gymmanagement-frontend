@@ -6,7 +6,7 @@ export const LoginContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #b22222 0%, #000000 100%);
+  background: linear-gradient(135deg, #374a6fff 0%, #000000 100%);
 `;
 
 export const LoginCard = styled(Card)`
@@ -25,7 +25,7 @@ export const Logo = styled.img`
 
 export const StyledButton = styled(Button)`
   width: 100%;
-  background: #b22222 !important;
+  background: #374a6fff !important;
   border: none;
   color: #ffffff !important;
   font-weight: 600;
@@ -34,8 +34,9 @@ export const StyledButton = styled(Button)`
   transition: all 0.3s ease;
 
   &:hover {
-    background: #d32f2f !important;
-    color: #ffd700 !important;
+    background: #374a6fff !important;
+    // color: # !important;
+    opacity: 0.9;
   }
 `;
 

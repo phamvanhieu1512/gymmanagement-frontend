@@ -71,3 +71,21 @@ export const uploadAvatar = async (id, data, access_token) => {
     throw error;
   }
 };
+
+export const resetPasswordTrainer = async (data, access_token) => {
+  try {
+    const res = await axios.post(
+      `${process.env.REACT_APP_API_URL_BACKEND}/user/reset-password`,
+      data,
+      {
+        headers: {
+          token: `Bearer ${access_token}`,
+        },
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.log("Axios error:", error);
+    throw error;
+  }
+};

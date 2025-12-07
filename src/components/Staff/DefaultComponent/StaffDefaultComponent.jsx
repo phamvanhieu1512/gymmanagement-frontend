@@ -9,7 +9,7 @@ import {
   UserOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
-import { Button, Layout } from "antd";
+import { Button, Layout, Menu, Modal } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 import logoTrang from "../../../assets/images/logo/logo_trang.png";
 import { StyledMenu } from "./styleStaffDefaultComponent";
@@ -55,10 +55,19 @@ const StaffDefaultComponent = ({ children }) => {
     { key: "logout", icon: <LogoutOutlined />, label: "Đăng xuất" },
   ];
 
-  const handleMenuClick = async (e) => {
-    // e.domEvent.preventDefault();
+  const handleMenuClick = (e) => {
     if (e.key === "logout") {
-      await handleLogout();
+      Modal.confirm({
+        title: "Xác nhận đăng xuất",
+        content: "Bạn có chắc chắn muốn đăng xuất không?",
+        okText: "Có",
+        cancelText: "Không",
+        centered: true,
+        okType: "danger",
+        onOk: async () => {
+          await handleLogout();
+        },
+      });
     } else {
       navigate(e.key);
     }
@@ -148,7 +157,7 @@ const StaffDefaultComponent = ({ children }) => {
           style={{
             marginLeft: collapsed ? 80 : 200,
             transition: "all 0.3s",
-            background: "#F5F7FA",
+            background: "#374a6fff",
           }}
         >
           <Content
@@ -156,7 +165,7 @@ const StaffDefaultComponent = ({ children }) => {
               margin: 0,
               padding: 24,
               minHeight: "calc(100vh - 70px)",
-              background: "#FFFFFF",
+              background: "#374a6fff",
               color: "#333333",
               borderRadius: 8,
               boxShadow: "0 0 10px rgba(0,0,0,0.05)",
