@@ -32,3 +32,20 @@ export const getAllMembers = async (access_token) => {
     throw error;
   }
 };
+
+export const getAllCheckInHistory = async (access_token) => {
+  try {
+    const res = await axios.get(
+      `${process.env.REACT_APP_API_URL_BACKEND}/admin/checkin/history-all`,
+      {
+        headers: {
+          token: `Bearer ${access_token}`,
+        },
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.log("Axios error:", error);
+    throw error;
+  }
+};

@@ -2,6 +2,7 @@ import {
   Button,
   Card,
   Col,
+  Descriptions,
   Form,
   Input,
   Modal,
@@ -20,6 +21,7 @@ import {
   PlusOutlined,
   DeleteOutlined,
   StopOutlined,
+  InfoCircleOutlined,
 } from "@ant-design/icons";
 import * as PackageService from "../../../services/Admin/PackageService";
 import * as TrainerService from "../../../services/Admin/TrainerService";
@@ -35,6 +37,8 @@ const PackagePage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editPackage, setEditPackage] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState({
     name: "",
@@ -45,9 +49,6 @@ const PackagePage = () => {
     minDuration: "",
     maxDuration: "",
   });
-  const [searchResults, setSearchResults] = useState([]);
-  const [loadingSearch, setLoadingSearch] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
   const [selectedType, setSelectedType] = useState("standard");
   const [form] = Form.useForm();
 
@@ -66,24 +67,24 @@ const PackagePage = () => {
     queryFn: getAllTrainers,
   });
 
-  const getAllPackage = async () => {
+  const getAllPackages = async () => {
     const token = await getValidToken();
     if (!token) {
       return { status: "ERROR", message: "Token không hợp lệ", data: [] };
     }
 
-    const res = await PackageService.getAllPackage(token);
+    const res = await PackageService.getAllPackages(token);
     return res;
   };
 
   const { isLoading: isLoadingPackages, data: PackagesData } = useQuery({
     queryKey: ["packages"],
-    queryFn: getAllPackage,
+    queryFn: getAllPackages,
   });
 
-  const infoPackage = (Package) => {
-    setSelectedPackage(Package);
-    setIsInfoModalOpen(true);
+  const openDetailModal = (pkg) => {
+    setSelectedPackage(pkg);
+    setIsDetailModalOpen(true);
   };
 
   const openEditModal = (Package) => {
@@ -163,44 +164,43 @@ const PackagePage = () => {
     form.resetFields();
   };
 
-  const handleSearch = async () => {
-    setLoadingSearch(true);
-    try {
-      const token = await getValidToken();
-      if (!token) {
-        message.error("Token không hợp lệ");
-        return;
-      }
+  const filterPackages = () => {
+    if (!PackagesData?.data) return [];
 
-      const res = await PackageService.searchPackage(filters, token);
-      if (res.status === "ERROR") {
-        message.error(res.message || "Tìm kiếm thất bại");
-        setSearchResults([]);
-      } else {
-        setSearchResults(res.data || []);
-      }
+    return PackagesData.data.filter((pkg) => {
+      const matchName =
+        !filters.name ||
+        pkg.name.toLowerCase().includes(filters.name.toLowerCase());
 
-      setHasSearched(true);
-    } catch (error) {
-      message.error("Có lỗi xảy ra khi tìm kiếm");
-      console.error(error);
-    } finally {
-      setLoadingSearch(false);
-    }
-  };
+      const matchType = !filters.type || pkg.type === filters.type;
 
-  const handleReset = () => {
-    setFilters({
-      name: "",
-      type: null,
-      isActive: null,
-      minPrice: "",
-      maxPrice: "",
-      minDuration: "",
-      maxDuration: "",
+      const matchStatus =
+        filters.isActive === null || pkg.isActive === filters.isActive;
+
+      const matchMinPrice =
+        !filters.minPrice || pkg.price >= Number(filters.minPrice);
+
+      const matchMaxPrice =
+        !filters.maxPrice || pkg.price <= Number(filters.maxPrice);
+
+      const matchMinDuration =
+        !filters.minDuration ||
+        pkg.durationInDays >= Number(filters.minDuration);
+
+      const matchMaxDuration =
+        !filters.maxDuration ||
+        pkg.durationInDays <= Number(filters.maxDuration);
+
+      return (
+        matchName &&
+        matchType &&
+        matchStatus &&
+        matchMinPrice &&
+        matchMaxPrice &&
+        matchMinDuration &&
+        matchMaxDuration
+      );
     });
-    setSearchResults([]);
-    setHasSearched(false); // <-- reset trạng thái search
   };
 
   return (
@@ -225,121 +225,117 @@ const PackagePage = () => {
         </Button>
       </div>
 
-      <Card style={{ marginBottom: 16, background: "transparent", border: 0 }}>
-        <Row gutter={16} align="middle">
-          <Col span={20}>
-            <Row gutter={[16, 16]}>
-              <Col span={6}>
-                <Input
-                  placeholder="Tên gói tập..."
-                  value={filters.name}
-                  onChange={(e) =>
-                    setFilters({ ...filters, name: e.target.value })
-                  }
-                />
-              </Col>
-
-              {/* Loại gói */}
-              <Col span={4}>
-                <Select
-                  placeholder="Loại gói"
-                  value={filters.type}
-                  onChange={(value) => setFilters({ ...filters, type: value })}
-                  allowClear
-                  options={[
-                    { label: "Standard", value: "standard" },
-                    { label: "Gói PT", value: "personal_trainer" },
-                  ]}
-                />
-              </Col>
-
-              {/* Trạng thái */}
-              <Col span={4}>
-                <Select
-                  placeholder="Trạng thái"
-                  value={
-                    filters.isActive !== null ? filters.isActive : undefined
-                  }
-                  onChange={(value) =>
-                    setFilters({ ...filters, isActive: value })
-                  }
-                  allowClear
-                  options={[
-                    { label: "Đang hoạt động", value: true },
-                    { label: "Ngừng hoạt động", value: false },
-                  ]}
-                />
-              </Col>
-
-              <Col span={4}>
-                <Input
-                  placeholder="Giá min"
-                  type="number"
-                  value={filters.minPrice}
-                  onChange={(e) =>
-                    setFilters({ ...filters, minPrice: e.target.value })
-                  }
-                />
-              </Col>
-              <Col span={4}>
-                <Input
-                  placeholder="Giá max"
-                  type="number"
-                  value={filters.maxPrice}
-                  onChange={(e) =>
-                    setFilters({ ...filters, maxPrice: e.target.value })
-                  }
-                />
-              </Col>
-            </Row>
-
-            <Row gutter={[16, 16]} style={{ marginTop: 8 }}>
-              {/* Thời lượng min/max */}
-              <Col span={6}>
-                <Input
-                  placeholder="Ngày min"
-                  type="number"
-                  value={filters.minDuration}
-                  onChange={(e) =>
-                    setFilters({ ...filters, minDuration: e.target.value })
-                  }
-                />
-              </Col>
-              <Col span={6}>
-                <Input
-                  placeholder="Ngày max"
-                  type="number"
-                  value={filters.maxDuration}
-                  onChange={(e) =>
-                    setFilters({ ...filters, maxDuration: e.target.value })
-                  }
-                />
-              </Col>
-            </Row>
+      <Card
+        style={{
+          marginBottom: 16,
+          background: "#fff",
+          borderRadius: 8,
+          padding: 16,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+        }}
+      >
+        <Row gutter={[16, 16]}>
+          {/* Tên gói */}
+          <Col span={6}>
+            <Input
+              placeholder="Tên gói tập..."
+              value={filters.name}
+              onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+            />
           </Col>
 
-          {/* Cột nút: chiếm 4/24 */}
-          <Col span={4} style={{ textAlign: "right" }}>
-            <Space direction="vertical" style={{ width: "100%" }}>
-              <Button type="primary" block onClick={handleSearch}>
-                Tìm kiếm
-              </Button>
-              <Button danger block onClick={handleReset}>
-                Reset
-              </Button>
-            </Space>
+          {/* Loại gói */}
+          <Col span={4}>
+            <Select
+              placeholder="Loại gói"
+              value={filters.type}
+              onChange={(value) => setFilters({ ...filters, type: value })}
+              allowClear
+              style={{ width: "100%" }}
+              options={[
+                { label: "Standard", value: "standard" },
+                { label: "Gói PT", value: "personal_trainer" },
+              ]}
+            />
+          </Col>
+
+          {/* Trạng thái */}
+          <Col span={4}>
+            <Select
+              placeholder="Trạng thái"
+              value={filters.isActive !== null ? filters.isActive : undefined}
+              onChange={(value) => setFilters({ ...filters, isActive: value })}
+              allowClear
+              style={{ width: "100%" }}
+              options={[
+                { label: "Đang hoạt động", value: true },
+                { label: "Ngừng hoạt động", value: false },
+              ]}
+            />
+          </Col>
+
+          {/* Giá min */}
+          <Col span={5}>
+            <Input
+              placeholder="Giá min"
+              type="number"
+              value={filters.minPrice}
+              onChange={(e) =>
+                setFilters({ ...filters, minPrice: e.target.value })
+              }
+            />
+          </Col>
+
+          {/* Giá max */}
+          <Col span={5}>
+            <Input
+              placeholder="Giá max"
+              type="number"
+              value={filters.maxPrice}
+              onChange={(e) =>
+                setFilters({ ...filters, maxPrice: e.target.value })
+              }
+            />
+          </Col>
+        </Row>
+
+        {/* Hàng 2 */}
+        <Row gutter={[16, 16]} style={{ marginTop: 8 }}>
+          {/* Ngày min */}
+          <Col span={6}>
+            <Input
+              placeholder="Ngày min"
+              type="number"
+              value={filters.minDuration}
+              onChange={(e) =>
+                setFilters({ ...filters, minDuration: e.target.value })
+              }
+            />
+          </Col>
+
+          {/* Ngày max */}
+          <Col span={6}>
+            <Input
+              placeholder="Ngày max"
+              type="number"
+              value={filters.maxDuration}
+              onChange={(e) =>
+                setFilters({ ...filters, maxDuration: e.target.value })
+              }
+            />
           </Col>
         </Row>
       </Card>
 
       <Table
         rowKey="_id"
-        loading={loadingSearch || isLoadingPackages}
-        dataSource={hasSearched ? searchResults : PackagesData?.data || []}
+        loading={isLoadingPackages}
+        dataSource={filterPackages()}
         locale={{
-          emptyText: hasSearched
-            ? "Không tìm thấy gói tập nào"
-            : "Chưa có dữ liệu",
+          emptyText:
+            filterPackages().length === 0
+              ? "Không tìm thấy gói tập nào"
+              : "Chưa có dữ liệu",
         }}
         columns={[
           {
@@ -399,6 +395,13 @@ const PackagePage = () => {
               <Space>
                 <Button
                   type="link"
+                  size="small"
+                  onClick={() => openDetailModal(record)}
+                >
+                  <InfoCircleOutlined style={{ fontSize: "20px" }} />
+                </Button>
+                <Button
+                  type="link"
                   onClick={() => openEditModal(record)}
                   size="small"
                 >
@@ -419,7 +422,7 @@ const PackagePage = () => {
           },
         ]}
         pagination={{
-          pageSize: 10, // mỗi trang 10 người
+          pageSize: 10,
         }}
       />
 
@@ -536,46 +539,68 @@ const PackagePage = () => {
       </Modal>
 
       <Modal
-        title="Thông tin gói tập"
-        open={isInfoModalOpen}
-        onCancel={() => setIsInfoModalOpen(false)}
+        title="Chi tiết gói tập"
+        open={isDetailModalOpen}
+        onCancel={() => setIsDetailModalOpen(false)}
         footer={[
-          <Button key="close" onClick={() => setIsInfoModalOpen(false)}>
+          <Button key="close" onClick={() => setIsDetailModalOpen(false)}>
             Đóng
           </Button>,
         ]}
+        width={600} // rộng hơn, dễ nhìn
       >
         {selectedPackage && (
-          <div>
-            <p>
-              <strong>Tên gói:</strong> {selectedPackage.name}
-            </p>
-            <p>
-              <strong>Giá:</strong> {selectedPackage.price?.toLocaleString()}₫
-            </p>
-            <p>
-              <strong>Thời lượng:</strong> {selectedPackage.durationInDays} ngày
-            </p>
-            <p>
-              <strong>Loại:</strong> {selectedPackage.type}
-            </p>
-            <p>
-              <strong>Buổi PT:</strong> {selectedPackage.sessionsWithTrainer}
-            </p>
-            <p>
-              <strong>Tối đa:</strong> {selectedPackage.maxMembers}
-            </p>
-            <p>
-              <strong>Đã đăng ký:</strong> {selectedPackage.registeredCount}
-            </p>
-            <p>
-              <strong>Mô tả:</strong> {selectedPackage.description}
-            </p>
-            <p>
-              <strong>Trạng thái:</strong>{" "}
-              {selectedPackage.isActive ? "Hoạt động" : "Ngừng"}
-            </p>
-          </div>
+          <Descriptions
+            bordered
+            column={1}
+            size="middle"
+            labelStyle={{ fontWeight: 600, width: 180 }}
+            contentStyle={{ fontWeight: 400 }}
+          >
+            <Descriptions.Item label="Tên gói">
+              {selectedPackage.name}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Loại">
+              {selectedPackage.type === "personal_trainer"
+                ? "Gói PT"
+                : "Standard"}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Giá">
+              {selectedPackage.price?.toLocaleString()} ₫
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Thời lượng">
+              {selectedPackage.durationInDays} ngày
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Buổi PT">
+              {selectedPackage.sessionsWithTrainer || 0}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Số người tối đa">
+              {selectedPackage.maxMembers || "Không giới hạn"}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Đã đăng ký">
+              {selectedPackage.registeredCount}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Trạng thái">
+              {selectedPackage.isActive ? (
+                <Tag color="green">Đang hoạt động</Tag>
+              ) : (
+                <Tag color="red">Ngừng</Tag>
+              )}
+            </Descriptions.Item>
+
+            {selectedPackage.description && (
+              <Descriptions.Item label="Mô tả">
+                {selectedPackage.description}
+              </Descriptions.Item>
+            )}
+          </Descriptions>
         )}
       </Modal>
 

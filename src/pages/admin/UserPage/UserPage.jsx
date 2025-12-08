@@ -394,7 +394,7 @@ const UserPage = () => {
         title="Thông tin người dùng"
         open={isInfoModalOpen}
         onCancel={() => setIsInfoModalOpen(false)}
-        width={800} //
+        width={800}
         footer={[
           <Button key="close" onClick={() => setIsInfoModalOpen(false)}>
             Đóng
@@ -402,10 +402,22 @@ const UserPage = () => {
         ]}
       >
         {selectedUser && (
-          <Card bordered style={{ marginBottom: 16, borderRadius: 10 }}>
-            <div style={{ textAlign: "center", marginBottom: 16 }}>
+          <>
+            {/* Avatar và Thông tin cơ bản */}
+            <Card
+              bordered
+              style={{
+                marginBottom: 16,
+                borderRadius: 10,
+                textAlign: "center",
+              }}
+            >
               <img
-                src={`${url}${selectedUser.avatarUrl}`}
+                src={
+                  selectedUser.avatarUrl
+                    ? `${url}${selectedUser.avatarUrl}`
+                    : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                }
                 alt={selectedUser.fullName}
                 style={{
                   width: 130,
@@ -413,196 +425,108 @@ const UserPage = () => {
                   borderRadius: "50%",
                   objectFit: "cover",
                   boxShadow: "0 0 6px rgba(0,0,0,0.2)",
+                  marginBottom: 12,
                 }}
               />
-            </div>
+              <Typography.Title level={5}>
+                {selectedUser.fullName}
+              </Typography.Title>
+              <Row gutter={[16, 12]}>
+                <Col span={12}>
+                  <p>
+                    <strong>Email:</strong> {selectedUser.email || "-"}
+                  </p>
+                </Col>
+                <Col span={12}>
+                  <p>
+                    <strong>Số điện thoại:</strong> {selectedUser.phone || "-"}
+                  </p>
+                </Col>
+                <Col span={12}>
+                  <p>
+                    <strong>Vai trò:</strong> {selectedUser.role}
+                  </p>
+                </Col>
+                <Col span={12}>
+                  <p>
+                    <strong>Giới tính:</strong> {selectedUser.gender || "-"}
+                  </p>
+                </Col>
+                <Col span={12}>
+                  <p>
+                    <strong>Ngày sinh:</strong>{" "}
+                    {selectedUser.dateOfBirth
+                      ? dayjs(selectedUser.dateOfBirth).format("DD/MM/YYYY")
+                      : "-"}
+                  </p>
+                </Col>
+                <Col span={12}>
+                  <p>
+                    <strong>Trạng thái:</strong>{" "}
+                    {selectedUser.isActive ? (
+                      <Tag color="green">Hoạt động</Tag>
+                    ) : (
+                      <Tag color="red">Khóa</Tag>
+                    )}
+                  </p>
+                </Col>
+              </Row>
+            </Card>
 
-            <Row gutter={[16, 12]}>
-              <Col span={12}>
-                <p>
-                  <strong>Họ tên:</strong> {selectedUser.fullName}
-                </p>
-              </Col>
-              <Col span={12}>
-                <p>
-                  <strong>Email:</strong> {selectedUser.email}
-                </p>
-              </Col>
+            {/* Health Info */}
+            {selectedUser.healthInfo && (
+              <Card
+                title="Thông tin sức khỏe"
+                style={{ marginBottom: 16, borderRadius: 10 }}
+              >
+                <Row gutter={[16, 12]}>
+                  <Col span={12}>
+                    <p>
+                      <strong>Chiều cao:</strong>{" "}
+                      {selectedUser.healthInfo.height ?? "-"} cm
+                    </p>
+                  </Col>
+                  <Col span={12}>
+                    <p>
+                      <strong>Cân nặng:</strong>{" "}
+                      {selectedUser.healthInfo.weight ?? "-"} kg
+                    </p>
+                  </Col>
+                  <Col span={12}>
+                    <p>
+                      <strong>BMI:</strong> {selectedUser.healthInfo.bmi ?? "-"}
+                    </p>
+                  </Col>
+                  <Col span={12}>
+                    <p>
+                      <strong>Mục tiêu tập luyện:</strong>{" "}
+                      {selectedUser.healthInfo.fitnessGoal ?? "-"}
+                    </p>
+                  </Col>
+                  <Col span={24}>
+                    <p>
+                      <strong>Tiền sử bệnh:</strong>{" "}
+                      {selectedUser.healthInfo.medicalHistory?.length
+                        ? selectedUser.healthInfo.medicalHistory.join(", ")
+                        : "Không có"}
+                    </p>
+                  </Col>
+                </Row>
+              </Card>
+            )}
 
-              <Col span={12}>
-                <p>
-                  <strong>Số điện thoại:</strong> {selectedUser.phone}
-                </p>
-              </Col>
-              <Col span={12}>
-                <p>
-                  <strong>Vai trò:</strong> {selectedUser.role}
-                </p>
-              </Col>
-
-              <Col span={12}>
-                <p>
-                  <strong>Giới tính:</strong> {selectedUser.gender}
-                </p>
-              </Col>
-              <Col span={12}>
-                <p>
-                  <strong>Ngày sinh:</strong>{" "}
-                  {dayjs(selectedUser.dateOfBirth).format("DD/MM/YYYY")}
-                </p>
-              </Col>
-
-              <Col span={12}>
-                <p>
-                  <strong>Trạng thái:</strong>{" "}
-                  {selectedUser.isActive ? (
-                    <Tag color="green">Hoạt động</Tag>
-                  ) : (
-                    <Tag color="red">Khóa</Tag>
-                  )}
-                </p>
-              </Col>
-            </Row>
-          </Card>
+            {/* Reset mật khẩu */}
+            <Button
+              onClick={() => handleResetPassword(selectedUser.email)}
+              type="primary"
+              danger
+              block
+              size="large"
+            >
+              <KeyOutlined /> Reset Mật Khẩu
+            </Button>
+          </>
         )}
-
-        {selectedUser?.healthInfo && (
-          <Card
-            title="Thông tin sức khỏe"
-            style={{ marginBottom: 16, borderRadius: 10 }}
-          >
-            <Row gutter={[16, 12]}>
-              <Col span={12}>
-                <p>
-                  <strong>Chiều cao:</strong> {selectedUser.healthInfo.height}{" "}
-                  cm
-                </p>
-              </Col>
-              <Col span={12}>
-                <p>
-                  <strong>Cân nặng:</strong> {selectedUser.healthInfo.weight} kg
-                </p>
-              </Col>
-              <Col span={12}>
-                <p>
-                  <strong>BMI:</strong> {selectedUser.healthInfo.bmi}
-                </p>
-              </Col>
-              <Col span={12}>
-                <p>
-                  <strong>Mục tiêu tập luyện:</strong>{" "}
-                  {selectedUser.healthInfo.fitnessGoal}
-                </p>
-              </Col>
-              <Col span={24}>
-                <p>
-                  <strong>Tiền sử bệnh:</strong>{" "}
-                  {selectedUser.healthInfo.medicalHistory?.length
-                    ? selectedUser.healthInfo.medicalHistory.join(", ")
-                    : "Không có"}
-                </p>
-              </Col>
-            </Row>
-          </Card>
-        )}
-
-        {/* {selectedUser?.membership && (
-          <Card
-            title="Membership thông tin"
-            style={{ marginBottom: 16, borderRadius: 10 }}
-          >
-            <Row gutter={[16, 12]}>
-              <Col span={12}>
-                <p>
-                  <strong>Ngày bắt đầu:</strong>{" "}
-                  {dayjs(selectedUser.membership.startDate).format(
-                    "DD/MM/YYYY"
-                  )}
-                </p>
-              </Col>
-
-              <Col span={12}>
-                <p>
-                  <strong>Ngày kết thúc:</strong>{" "}
-                  {dayjs(selectedUser.membership.endDate).format("DD/MM/YYYY")}
-                </p>
-              </Col>
-
-              <Col span={12}>
-                <p>
-                  <strong>Gói tập:</strong>{" "}
-                  {selectedUser.membership.packageId?.name || "Không có"}
-                </p>
-              </Col>
-
-              <Col span={12}>
-                <p>
-                  <strong>Loại gói:</strong>{" "}
-                  <Tag color="blue">
-                    {selectedUser.membership.packageId?.type ||
-                      "Không xác định"}
-                  </Tag>
-                </p>
-              </Col>
-
-              <Col span={12}>
-                <p>
-                  <strong>Số buổi còn lại:</strong>{" "}
-                  <Tag color="purple">
-                    {selectedUser.membership.remainingSessions ?? 0}
-                  </Tag>
-                </p>
-              </Col>
-
-              <Col span={12}>
-                <p>
-                  <strong>Huấn luyện viên:</strong>{" "}
-                  {selectedUser.membership.trainerId?.fullName || "Không có"}
-                </p>
-              </Col>
-
-              <Col span={12}>
-                <p>
-                  <strong>Tự động gia hạn:</strong>{" "}
-                  {selectedUser.membership.autoRenew ? (
-                    <Tag color="green">Đang bật</Tag>
-                  ) : (
-                    <Tag color="red">Tắt</Tag>
-                  )}
-                </p>
-              </Col>
-
-              <Col span={12}>
-                <p>
-                  <strong>Trạng thái:</strong>{" "}
-                  <Tag
-                    color={
-                      selectedUser.membership.status === "active"
-                        ? "green"
-                        : selectedUser.membership.status === "expired"
-                        ? "red"
-                        : selectedUser.membership.status === "pending"
-                        ? "blue"
-                        : "default"
-                    }
-                  >
-                    {selectedUser.membership.status.toUpperCase()}
-                  </Tag>
-                </p>
-              </Col>
-            </Row>
-          </Card>
-        )} */}
-
-        <Button
-          onClick={() => handleResetPassword(selectedUser.email)}
-          type="primary"
-          danger
-          block
-          size="large"
-        >
-          <KeyOutlined /> Reset Mật Khẩu
-        </Button>
       </Modal>
 
       <Modal

@@ -56,10 +56,10 @@ const MembershipPage = () => {
     return res;
   };
 
-  const getAllPackages = async () => {
+  const getAllPackagess = async () => {
     const token = await getValidToken();
     if (!token) return { status: "ERROR", data: [] };
-    const res = await PackageService.getAllPackage(token);
+    const res = await PackageService.getAllPackages(token);
     return res;
   };
 
@@ -77,7 +77,7 @@ const MembershipPage = () => {
 
   const { data: pkgData } = useQuery({
     queryKey: ["get-all-packages"],
-    queryFn: getAllPackages,
+    queryFn: getAllPackagess,
   });
 
   const { data: trainerData } = useQuery({

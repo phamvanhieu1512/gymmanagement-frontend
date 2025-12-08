@@ -19,7 +19,7 @@ export const createPackage = async (data, access_token) => {
   }
 };
 
-export const getAllPackage = async (access_token) => {
+export const getAllPackages = async (access_token) => {
   try {
     const res = await axios.get(
       `${process.env.REACT_APP_API_URL_BACKEND}/admin/get-all-packages`,

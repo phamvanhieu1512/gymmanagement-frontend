@@ -4,9 +4,10 @@ import {
   Modal,
   Table,
   Typography,
-  Checkbox,
+  Tag,
   message,
   Spin,
+  Space,
 } from "antd";
 import { QRCodeCanvas } from "qrcode.react";
 import * as checkInQRService from "../../../services/Admin/checkInQRService";
@@ -17,7 +18,6 @@ import { getValidToken } from "../../../services/getValidToken";
 const AttendancePage = () => {
   const { Title } = Typography;
 
-  const [selectedMembership, setSelectedMembership] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
   const [qrValue, setQrValue] = useState("");
   const [creatingQR, setCreatingQR] = useState(false);
@@ -25,68 +25,60 @@ const AttendancePage = () => {
   // ================================
   // Lấy danh sách membership hợp lệ
   // ================================
-  const getAllMembers = async () => {
+  const fetchMembers = async () => {
     const token = await getValidToken();
-    if (!token) return [];
-
     const res = await checkInQRService.getAllMembers(token);
     return res.data || [];
   };
 
   const { data: memberships = [], isLoading } = useQuery({
     queryKey: ["memberships"],
-    queryFn: getAllMembers,
+    queryFn: fetchMembers,
   });
 
   // ================================
-  // Tạo QR khi tick
+  // Handle create QR
   // ================================
   const handleCreateQR = async (record) => {
     try {
-      if (creatingQR) return;
       setCreatingQR(true);
-
       const token = await getValidToken();
-      if (!token) throw new Error("Token không hợp lệ");
 
       const res = await checkInQRService.createQR(token, {
         membershipId: record.membershipId,
         memberId: record.memberId,
       });
 
-      if (res?.status === "OK") {
+      if (res.status === "OK") {
         setSelectedMember(record);
-        setQrValue(res.data?.hash || "");
-        message.success("Tạo QR thành công");
+        setQrValue(res.data?.hash);
+        message.success("Tạo QR thành công!");
       } else {
-        message.error(res?.message || "Tạo QR thất bại");
+        message.error(res.message || "Không thể tạo QR");
       }
-    } catch (error) {
-      const msg = error?.response?.data?.message || error.message;
-      message.error(msg);
+    } catch (err) {
+      message.error(err.message);
     } finally {
       setCreatingQR(false);
     }
   };
 
   // ================================
-  // Columns danh sách membership
+  // TABLE COLUMNS
   // ================================
   const columns = [
     {
-      title: "Tạo",
-      key: "create",
+      title: "Thành viên",
+      key: "memberInfo",
+      width: 250,
       render: (_, record) => (
-        <Checkbox
-          checked={selectedMember?.memberId === record.memberId}
-          disabled={creatingQR}
-          onChange={() => handleCreateQR(record)}
-        />
+        <div>
+          <b>{record.fullName}</b>
+          <div style={{ fontSize: 12, color: "#aaa" }}>{record.email}</div>
+          <div style={{ fontSize: 12 }}>{record.phone}</div>
+        </div>
       ),
     },
-    { title: "Tên Member", dataIndex: "fullName", key: "fullName" },
-    { title: "Email", dataIndex: "email", key: "email" },
-    { title: "Số điện thoại", dataIndex: "phone", key: "phone" },
     {
       title: "Gói tập",
       dataIndex: "packageName",
@@ -96,6 +88,7 @@ const AttendancePage = () => {
       title: "Buổi còn lại",
       dataIndex: "remainingSessions",
       key: "remainingSessions",
+      render: (num) => <Tag color="blue">{num}</Tag>,
     },
     {
       title: "Ngày bắt đầu",
@@ -105,14 +98,42 @@ const AttendancePage = () => {
     {
       title: "Ngày kết thúc",
       dataIndex: "endDate",
-      render: (d) => dayjs(d).format("DD/MM/YYYY"),
+      render: (d) => {
+        const isExpired = dayjs(d).isBefore(dayjs());
+        return (
+          <Space>
+            {dayjs(d).format("DD/MM/YYYY")}
+            {isExpired ? (
+              <Tag color="red">Hết hạn</Tag>
+            ) : (
+              <Tag color="green">Còn hạn</Tag>
+            )}
+          </Space>
+        );
+      },
+    },
+    {
+      title: "Tạo QR",
+      key: "action",
+      render: (_, record) => (
+        <Button
+          type="primary"
+          loading={creatingQR && selectedMember?.memberId === record.memberId}
+          onClick={() => handleCreateQR(record)}
+        >
+          Tạo mã
+        </Button>
+      ),
     },
   ];
 
+  // ================================
+  // RENDER
+  // ================================
   return (
     <div style={{ padding: 24 }}>
-      <Title level={3}>
-        <span style={{ color: "#fff" }}>Quản lý điểm danh</span>
+      <Title level={3} style={{ color: "#fff" }}>
+        Quản lý điểm danh
       </Title>
 
       <Table
@@ -120,36 +141,49 @@ const AttendancePage = () => {
         dataSource={memberships}
         columns={columns}
         rowKey="membershipId"
-        pagination={{ pageSize: 10 }}
+        pagination={{ pageSize: 8 }}
       />
 
       {/* QR MODAL */}
       <Modal
-        title={selectedMember ? `QR của ${selectedMember.fullName}` : ""}
         open={!!selectedMember}
+        title={
+          selectedMember
+            ? `QR của ${selectedMember.fullName}`
+            : "Đang tạo mã..."
+        }
         onCancel={() => {
           setSelectedMember(null);
           setQrValue("");
         }}
-        footer={
+        footer={[
           <Button
+            key="close"
             onClick={() => {
               setSelectedMember(null);
               setQrValue("");
             }}
           >
             Đóng
-          </Button>
-        }
+          </Button>,
+        ]}
       >
-        {qrValue ? (
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <QRCodeCanvas value={qrValue} size={220} />
+        {!qrValue ? (
+          <div style={{ padding: 20, textAlign: "center" }}>
+            <Spin />
+            <div>Đang tạo QR...</div>
           </div>
         ) : (
-          <div style={{ textAlign: "center", padding: 24 }}>
-            <Spin />
-            <div style={{ marginTop: 12 }}>Đang tạo QR...</div>
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <QRCodeCanvas value={qrValue} size={230} />
+          </div>
+        )}
+
+        {selectedMember && (
+          <div style={{ marginTop: 20 }}>
+            <b>Gói tập:</b> {selectedMember.packageName} <br />
+            <b>Buổi còn lại:</b> {selectedMember.remainingSessions} <br />
+            <b>Hết hạn:</b> {dayjs(selectedMember.endDate).format("DD/MM/YYYY")}
           </div>
         )}
       </Modal>

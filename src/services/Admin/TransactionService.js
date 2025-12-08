@@ -90,3 +90,22 @@ export const exportPDF = async (data, access_token) => {
     throw error;
   }
 };
+
+export const createTransactionDirect = async (data, access_token) => {
+  try {
+    const res = await axios.post(
+      `${process.env.REACT_APP_API_URL_BACKEND}/admin/create-transaction-direct`,
+      data,
+      {
+        params: data,
+        headers: {
+          token: `Bearer ${access_token}`,
+        },
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.log("Axios error:", error);
+    throw error;
+  }
+};

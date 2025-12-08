@@ -23,6 +23,11 @@ import {
 import dayjs from "dayjs";
 import { getValidToken } from "../../../services/getValidToken";
 import * as TransactionService from "../../../services/Admin/TransactionService";
+import * as UserService from "../../../services/Admin/UserService"; // có getAllMembers
+import * as TrainerService from "../../../services/Admin/TrainerService"; // có getAllTrainers
+import * as PackageService from "../../../services/Admin/PackageService"; // có getAllPackages
+
+import { useMutationHook } from "../../../hooks/useMutationHook";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const { RangePicker } = DatePicker;
@@ -41,6 +46,27 @@ const TransactionsPage = () => {
   const queryClient = useQueryClient();
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportType, setExportType] = useState(null);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [members, setMembers] = useState([]);
+  const [trainers, setTrainers] = useState([]);
+  const [packages, setPackages] = useState([]);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [selectedTrainer, setSelectedTrainer] = useState(null);
+  const [formCreate] = Form.useForm();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = await getValidToken();
+      const membersRes = await UserService.getAllMembers(token);
+      const trainersRes = await TrainerService.getAllTrainers(token);
+      const packagesRes = await PackageService.getAllPackages(token);
+
+      setMembers(membersRes.data || []);
+      setTrainers(trainersRes.data || []);
+      setPackages(packagesRes.data || []);
+    };
+    fetchData();
+  }, []);
 
   const openDetailModal = (transaction) => {
     setSelectedTransaction(transaction);
@@ -189,8 +215,8 @@ const TransactionsPage = () => {
 
     const matchDate =
       dateRange.length === 2
-        ? dayjs(tx.date).isAfter(dateRange[0], "day") &&
-          dayjs(tx.date).isBefore(dateRange[1], "day")
+        ? dayjs(tx.date).isSameOrAfter(dateRange[0], "day") &&
+          dayjs(tx.date).isSameOrBefore(dateRange[1], "day")
         : true;
 
     return (
@@ -286,6 +312,9 @@ const TransactionsPage = () => {
         </Col>
 
         <Space>
+          <Button type="primary" onClick={() => setCreateModalVisible(true)}>
+            Tạo giao dịch trực tiếp
+          </Button>
           <Button
             type="primary"
             onClick={() => {
@@ -537,7 +566,7 @@ const TransactionsPage = () => {
         )}
       </Modal>
 
-      <Modal
+      {/* <Modal
         title="Cập nhật trạng thái giao dịch"
         open={isStatusModalOpen}
         onCancel={closeStatusModal}
@@ -573,7 +602,7 @@ const TransactionsPage = () => {
             </Button>
           </Form.Item>
         </Form>
-      </Modal>
+      </Modal> */}
 
       <Modal
         title="Xuất báo cáo giao dịch"
@@ -594,11 +623,11 @@ const TransactionsPage = () => {
           {/* Payment Method */}
           <Form.Item label="Phương thức thanh toán" name="paymentMethod">
             <Select allowClear>
-              <Select.Option value="credit_card">Credit Card</Select.Option>
-              <Select.Option value="momo">Momo</Select.Option>
-              <Select.Option value="paypal">Paypal</Select.Option>
-              <Select.Option value="bank_transfer">Bank Transfer</Select.Option>
-              <Select.Option value="other">Other</Select.Option>
+              <Select.Option value="direct">Tiền mặt</Select.Option>
+              <Select.Option value="bank_transfer">Chuyển khoản</Select.Option>
+              <Select.Option value="momo">MoMo</Select.Option>
+              <Select.Option value="paypal">paypal</Select.Option>
+              <Select.Option value="other">khác</Select.Option>
             </Select>
           </Form.Item>
 
@@ -614,6 +643,126 @@ const TransactionsPage = () => {
           <Form.Item>
             <Button type="primary" htmlType="submit" block>
               Xuất {exportType === "excel" ? "Excel" : "PDF"}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Tạo giao dịch trực tiếp"
+        open={createModalVisible}
+        onCancel={() => setCreateModalVisible(false)}
+        footer={null}
+      >
+        <Form
+          layout="vertical"
+          form={formCreate}
+          onFinish={async (values) => {
+            try {
+              const token = await getValidToken();
+
+              // Lấy package đang chọn
+              const selectedPkg = packages.find(
+                (p) => p._id === values.packageId
+              );
+
+              // Nếu package có trainer cố định, gán tự động
+              const trainerIdToSend =
+                selectedPkg?.type === "personal_trainer" &&
+                selectedPkg?.trainerId
+                  ? selectedPkg.trainerId
+                  : values.trainerId || null;
+
+              const res = await TransactionService.createTransactionDirect(
+                {
+                  userId: values.userId,
+                  packageId: values.packageId,
+                  trainerId: trainerIdToSend,
+                },
+                token
+              );
+
+              if (res.status === "OK") {
+                message.success(res.message);
+                queryClient.invalidateQueries(["transactions"]); // reload bảng
+                setCreateModalVisible(false);
+                formCreate.resetFields();
+              } else {
+                message.error(res.message);
+              }
+            } catch (err) {
+              console.error(err);
+              message.error("Tạo giao dịch thất bại");
+            }
+          }}
+        >
+          {/* Chọn khách hàng */}
+          <Form.Item
+            label="Khách hàng"
+            name="userId"
+            rules={[{ required: true, message: "Chọn khách hàng" }]}
+          >
+            <Select placeholder="Chọn khách hàng">
+              {members.map((m) => (
+                <Option key={m._id} value={m._id}>
+                  {m.fullName} - {m.email}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          {/* Chọn package */}
+          <Form.Item
+            label="Gói tập"
+            name="packageId"
+            rules={[{ required: true, message: "Chọn gói tập" }]}
+          >
+            <Select
+              placeholder="Chọn gói tập"
+              onChange={(pkgId) => {
+                const pkg = packages.find((p) => p._id === pkgId);
+                setSelectedPackage(pkg);
+
+                if (pkg?.type === "personal_trainer" && pkg?.trainerId) {
+                  const trainerInfo = trainers.find(
+                    (t) => t._id === pkg.trainerId
+                  );
+                  setSelectedTrainer(trainerInfo || null);
+                } else {
+                  setSelectedTrainer(null);
+                }
+
+                formCreate.setFieldsValue({ trainerId: undefined });
+              }}
+            >
+              {packages.map((p) => (
+                <Option key={p._id} value={p._id}>
+                  {p.name} - {p.price.toLocaleString()} ₫
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Huấn luyện viên">
+            <Input
+              value={
+                selectedPackage?.type === "personal_trainer" && selectedTrainer
+                  ? selectedTrainer.fullName
+                  : ""
+              }
+              placeholder={
+                selectedPackage?.type === "personal_trainer"
+                  ? "Không tìm thấy trainer"
+                  : "Gói tập không có trainer"
+              }
+              disabled
+            />
+          </Form.Item>
+
+          {/* Submit */}
+          <Form.Item>
+            <Button type="primary" htmlType="submit" block>
+              Tạo giao dịch trực tiếp
             </Button>
           </Form.Item>
         </Form>

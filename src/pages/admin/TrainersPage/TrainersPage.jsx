@@ -1,9 +1,11 @@
 import {
+  Avatar,
   Button,
   Col,
   DatePicker,
   Form,
   Input,
+  List,
   Modal,
   Row,
   Select,
@@ -19,6 +21,7 @@ import {
   PlusOutlined,
   InfoCircleOutlined,
   KeyOutlined,
+  CommentOutlined,
 } from "@ant-design/icons";
 import * as TrainerService from "../../../services/Admin/TrainerService";
 import { useMutationHook } from "../../../hooks/useMutationHook";
@@ -39,6 +42,10 @@ const TrainersPage = () => {
   const [editUser, setEditUser] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const queryClient = useQueryClient();
+  const [reviews, setReviews] = useState([]);
+  const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
+  const [selectedTrainerId, setSelectedTrainerId] = useState(null);
+  const [loadingReviews, setLoadingReviews] = useState(false);
   const [filters, setFilters] = useState({
     gender: null,
     specialty: "",
@@ -73,6 +80,30 @@ const TrainersPage = () => {
   const infoMember = (user) => {
     setSelectedUser(user);
     setIsInfoModalOpen(true);
+  };
+
+  const fetchTrainerReviews = async (trainerId) => {
+    try {
+      setLoadingReviews(true);
+      const token = await getValidToken();
+      const res = await TrainerService.getTrainerReviews(trainerId, token);
+      if (res.status === "OK") {
+        setReviews(res.data);
+      } else {
+        message.error(res.message || "Lấy bình luận thất bại");
+      }
+    } catch (err) {
+      console.error(err);
+      message.error("Lỗi hệ thống khi lấy bình luận");
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  const openReviewsModal = async (trainer) => {
+    setSelectedUser(trainer);
+    await fetchTrainerReviews(trainer._id);
+    setIsReviewsModalOpen(true);
   };
 
   const filteredUsers = usersData?.data.filter((user) => {
@@ -339,6 +370,9 @@ const TrainersPage = () => {
             title: "Hành động",
             render: (_, record) => (
               <Space>
+                <Button onClick={() => openReviewsModal(record)}>
+                  <CommentOutlined />
+                </Button>
                 <Button onClick={() => infoMember(record)}>
                   <InfoCircleOutlined />
                 </Button>
@@ -431,6 +465,46 @@ const TrainersPage = () => {
                 rules={[{ required: true, message: "Vui lòng nhập mật khẩu" }]}
               >
                 <Input.Password />
+              </Form.Item>
+            </Col>
+
+            {/* Thông tin Trainer Profile */}
+            <Col span={12}>
+              <Form.Item
+                label="Chuyên môn"
+                name={["trainerProfile", "specialty"]}
+              >
+                <Input placeholder="Ví dụ: Yoga, Gym..." />
+              </Form.Item>
+            </Col>
+
+            <Col span={12}>
+              <Form.Item
+                label="Kinh nghiệm (năm)"
+                name={["trainerProfile", "experienceYears"]}
+              >
+                <Input type="number" min={0} />
+              </Form.Item>
+            </Col>
+
+            <Col span={24}>
+              <Form.Item
+                label="Chứng chỉ (ngăn cách bằng dấu ,)"
+                name={["trainerProfile", "certifications"]}
+                getValueProps={(value) => ({
+                  value: value ? value.join(", ") : "",
+                })}
+                getValueFromEvent={(e) =>
+                  e.target.value.split(",").map((v) => v.trim())
+                }
+              >
+                <Input placeholder="Ví dụ: ACE, NASM" />
+              </Form.Item>
+            </Col>
+
+            <Col span={24}>
+              <Form.Item label="Bio" name={["trainerProfile", "bio"]}>
+                <Input.TextArea rows={3} />
               </Form.Item>
             </Col>
 
@@ -720,6 +794,59 @@ const TrainersPage = () => {
             Cập nhật huấn luyện viên
           </Button>
         </Form>
+      </Modal>
+
+      <Modal
+        title={
+          selectedUser
+            ? `Bình luận của huấn luyện viên: ${selectedUser.fullName}`
+            : "Bình luận"
+        }
+        open={isReviewsModalOpen}
+        onCancel={() => setIsReviewsModalOpen(false)}
+        footer={null}
+        width={600}
+      >
+        {loadingReviews ? (
+          <p>Đang tải...</p>
+        ) : reviews.length === 0 ? (
+          <p>Chưa có bình luận</p>
+        ) : (
+          <List
+            itemLayout="horizontal"
+            dataSource={reviews}
+            renderItem={(item) => (
+              <List.Item
+                actions={[
+                  <Button
+                    danger
+                    onClick={async () => {
+                      try {
+                        const token = await getValidToken();
+                        await TrainerService.deleteReview(item._id, token);
+                        message.success("Đã xóa bình luận");
+                        setReviews((prev) =>
+                          prev.filter((r) => r._id !== item._id)
+                        );
+                      } catch (err) {
+                        console.error(err);
+                        message.error("Xóa bình luận thất bại");
+                      }
+                    }}
+                  >
+                    Xóa
+                  </Button>,
+                ]}
+              >
+                <List.Item.Meta
+                  avatar={<Avatar src={item.member.avatarUrl} />}
+                  title={item.member.fullName}
+                  description={item.comment}
+                />
+              </List.Item>
+            )}
+          />
+        )}
       </Modal>
     </div>
   );
