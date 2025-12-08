@@ -3,7 +3,7 @@ import axios from "axios";
 export const createUser = async (data, access_token) => {
   try {
     const resSignIn = await axios.post(
-      `${process.env.REACT_APP_API_URL_BACKEND}/user/create-trainer`,
+      `${process.env.REACT_APP_API_URL_BACKEND}/user/create-staff`,
       data,
       {
         headers: {

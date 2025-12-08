@@ -22,6 +22,7 @@ import {
   StopOutlined,
 } from "@ant-design/icons";
 import * as PackageService from "../../../services/Admin/PackageService";
+import * as TrainerService from "../../../services/Admin/TrainerService";
 import { useMutationHook } from "../../../hooks/useMutationHook";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getValidToken } from "../../../services/getValidToken";
@@ -47,12 +48,22 @@ const PackagePage = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-
+  const [selectedType, setSelectedType] = useState("standard");
   const [form] = Form.useForm();
 
   const mutationcreatePackage = useMutationHook(async (data) => {
     const token = await getValidToken();
     return PackageService.createPackage(data, token);
+  });
+
+  const getAllTrainers = async () => {
+    const token = await getValidToken();
+    return TrainerService.getAllTrainers(token);
+  };
+
+  const { data: trainersData } = useQuery({
+    queryKey: ["trainers"],
+    queryFn: getAllTrainers,
   });
 
   const getAllPackage = async () => {
@@ -417,7 +428,6 @@ const PackagePage = () => {
         open={isModalOpen}
         onCancel={handleCancel}
         footer={null}
-        form={form}
       >
         <Form layout="vertical" onFinish={onFinish} form={form}>
           <Row gutter={16}>
@@ -454,15 +464,46 @@ const PackagePage = () => {
             </Col>
 
             <Col span={12}>
-              <Form.Item label="Loại gói" name="type">
+              <Form.Item
+                label="Loại gói"
+                name="type"
+                rules={[{ required: true, message: "Vui lòng chọn loại gói" }]}
+              >
                 <Select
                   options={[
                     { label: "Standard", value: "standard" },
                     { label: "Personal Trainer", value: "personal_trainer" },
                   ]}
+                  onChange={(value) => setSelectedType(value)}
                 />
               </Form.Item>
             </Col>
+
+            {/* Chỉ hiện khi chọn PT */}
+            {selectedType === "personal_trainer" && (
+              <Col span={24}>
+                <Form.Item
+                  label="Huấn luyện viên"
+                  name="trainerId"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Vui lòng chọn huấn luyện viên",
+                    },
+                  ]}
+                >
+                  <Select
+                    placeholder="Chọn PT..."
+                    options={
+                      trainersData?.data?.map((t) => ({
+                        value: t._id,
+                        label: t.fullName,
+                      })) || []
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            )}
 
             <Col span={12}>
               <Form.Item label="Buổi tập với PT" name="sessionsWithTrainer">
@@ -571,9 +612,29 @@ const PackagePage = () => {
                     { value: "standard", label: "Standard" },
                     { value: "personal_trainer", label: "Gói PT" },
                   ]}
+                  onChange={(value) => {
+                    form.setFieldsValue({ type: value });
+                  }}
                 />
               </Form.Item>
             </Col>
+
+            {/* Chỉ hiện khi type = PT */}
+            {form.getFieldValue("type") === "personal_trainer" && (
+              <Col span={24}>
+                <Form.Item label="Huấn luyện viên" name="trainerId">
+                  <Select
+                    placeholder="Chọn PT..."
+                    options={
+                      trainersData?.data?.map((t) => ({
+                        label: t.fullName,
+                        value: t._id,
+                      })) || []
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            )}
 
             <Col span={12}>
               <Form.Item label="Buổi PT" name="sessionsWithTrainer">
@@ -592,13 +653,12 @@ const PackagePage = () => {
                 <Input.TextArea rows={3} />
               </Form.Item>
             </Col>
+
             <Col span={12}>
               <Form.Item
                 label="Trạng thái"
                 name="isActive"
-                rules={[
-                  { required: true, message: "Vui lòng chọn trạng thái" },
-                ]}
+                rules={[{ required: true }]}
               >
                 <Select
                   options={[

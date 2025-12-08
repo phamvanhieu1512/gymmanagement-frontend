@@ -297,7 +297,7 @@ const StaffsPage = () => {
                 <Input.Password />
               </Form.Item>
             </Col>
-            <Form.Item name="role" hidden initialValue="trainer">
+            <Form.Item name="role" hidden initialValue="staff">
               <Input />
             </Form.Item>
             <Form.Item
