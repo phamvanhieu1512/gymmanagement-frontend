@@ -11,6 +11,7 @@ import {
 } from "antd";
 import { QRCodeCanvas } from "qrcode.react";
 import * as checkInQRService from "../../../services/Admin/checkInQRService";
+
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { getValidToken } from "../../../services/getValidToken";
@@ -81,14 +82,33 @@ const AttendancePage = () => {
     },
     {
       title: "Gói tập",
-      dataIndex: "packageName",
-      key: "packageName",
+      key: "package",
+      render: (_, record) => (
+        <div>
+          <b>{record.package?.name}</b>
+          {record.package?.type === "personal_trainer" && (
+            <Tag color="purple" style={{ marginLeft: 8 }}>
+              PT
+            </Tag>
+          )}
+        </div>
+      ),
     },
     {
       title: "Buổi còn lại",
       dataIndex: "remainingSessions",
       key: "remainingSessions",
       render: (num) => <Tag color="blue">{num}</Tag>,
+    },
+    {
+      title: "Trainer",
+      key: "trainer",
+      render: (_, record) =>
+        record.trainer ? (
+          <span>{record.trainer.fullName}</span>
+        ) : (
+          <span style={{ color: "#888" }}>Không có</span>
+        ),
     },
     {
       title: "Ngày bắt đầu",
@@ -181,7 +201,7 @@ const AttendancePage = () => {
 
         {selectedMember && (
           <div style={{ marginTop: 20 }}>
-            <b>Gói tập:</b> {selectedMember.packageName} <br />
+            <b>Gói tập:</b> {selectedMember.package?.name} <br />
             <b>Buổi còn lại:</b> {selectedMember.remainingSessions} <br />
             <b>Hết hạn:</b> {dayjs(selectedMember.endDate).format("DD/MM/YYYY")}
           </div>

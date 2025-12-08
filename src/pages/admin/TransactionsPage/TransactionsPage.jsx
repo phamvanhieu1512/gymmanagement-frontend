@@ -253,14 +253,18 @@ const TransactionsPage = () => {
       key: "paymentMethod",
       render: (method) => {
         switch (method) {
-          case "cash":
-            return <Tag color="gold">Tiền mặt</Tag>;
-          case "bank":
+          case "direct":
+            return <Tag color="green">Tiền mặt trực tiếp</Tag>;
+          case "bank_transfer":
             return <Tag color="blue">Chuyển khoản</Tag>;
           case "momo":
             return <Tag color="purple">MoMo</Tag>;
+          case "paypal":
+            return <Tag color="cyan">PayPal</Tag>;
+          case "other":
+            return <Tag color="default">Khác</Tag>;
           default:
-            return <Tag>Khác</Tag>;
+            return <Tag>Không rõ</Tag>;
         }
       },
     },
@@ -402,9 +406,11 @@ const TransactionsPage = () => {
               style={{ width: "100%" }}
             >
               <Option value="all">Tất cả phương thức</Option>
-              <Option value="cash">Tiền mặt</Option>
-              <Option value="bank">Chuyển khoản</Option>
+              <Option value="direct">Tiền mặt</Option>
+              <Option value="bank_transfer">Chuyển khoản</Option>
               <Option value="momo">Momo</Option>
+              <Option value="paypal">Paypal</Option>
+              <Option value="other">Khác</Option>
             </Select>
           </Col>
 
@@ -710,7 +716,6 @@ const TransactionsPage = () => {
               ))}
             </Select>
           </Form.Item>
-
           {/* Chọn package */}
           <Form.Item
             label="Gói tập"
@@ -743,22 +748,27 @@ const TransactionsPage = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item label="Huấn luyện viên">
-            <Input
-              value={
-                selectedPackage?.type === "personal_trainer" && selectedTrainer
-                  ? selectedTrainer.fullName
-                  : ""
-              }
-              placeholder={
-                selectedPackage?.type === "personal_trainer"
-                  ? "Không tìm thấy trainer"
-                  : "Gói tập không có trainer"
-              }
-              disabled
-            />
-          </Form.Item>
-
+          {/* Hiển thị thông tin package khi chọn */}
+          {selectedPackage && (
+            <Card size="small" style={{ marginBottom: 16 }}>
+              <p>
+                <b>Tên gói:</b> {selectedPackage.name}
+              </p>
+              <p>
+                <b>Giá:</b> {selectedPackage.price.toLocaleString()} ₫
+              </p>
+              <p>
+                <b>Mô tả:</b> {selectedPackage.description || "Không có mô tả"}
+              </p>
+              {selectedPackage.type === "personal_trainer" &&
+                selectedPackage.trainerId && (
+                  <p>
+                    <b>Trainer:</b> {selectedPackage.trainerId.fullName} - ID:{" "}
+                    {selectedPackage.trainerId._id}
+                  </p>
+                )}
+            </Card>
+          )}
           {/* Submit */}
           <Form.Item>
             <Button type="primary" htmlType="submit" block>

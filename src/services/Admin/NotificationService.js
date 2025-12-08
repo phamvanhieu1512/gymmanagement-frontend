@@ -3,7 +3,7 @@ import axios from "axios";
 export const sendNotification = async (data, access_token) => {
   try {
     const res = await axios.post(
-      `${process.env.REACT_APP_API_URL_BACKEND}/admin/send-notification`,
+      `${process.env.REACT_APP_API_URL_BACKEND}/admin/create-notification`,
       data,
       {
         headers: {
