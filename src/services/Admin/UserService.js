@@ -102,6 +102,23 @@ export const getAllMembers = async (access_token) => {
   }
 };
 
+export const getAllMembersAndStaffs = async (access_token) => {
+  try {
+    const res = await axios.get(
+      `${process.env.REACT_APP_API_URL_BACKEND}/user/get-all-members-staffs`,
+      {
+        headers: {
+          token: `Bearer ${access_token}`,
+        },
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.log("Axios error:", error);
+    throw error;
+  }
+};
+
 export const updateMember = async (id, data, access_token) => {
   try {
     const res = await axios.post(

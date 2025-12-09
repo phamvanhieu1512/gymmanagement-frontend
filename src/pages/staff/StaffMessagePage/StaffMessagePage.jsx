@@ -5,10 +5,8 @@ import { jwtDecode } from "jwt-decode";
 import { useLocation } from "react-router-dom";
 
 function StaffMessagePage() {
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const peerId = searchParams.get("peerId");
-  const name = searchParams.get("name");
+
+  const peerId = "6935d41c9148b73518528671"
 
   const user = useSelector((state) => state.user);
   const handleDecoded = () => {
@@ -31,11 +29,11 @@ function StaffMessagePage() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-
+ 
   const loadHistory = async () => {
     try {
       const res = await fetch(
-        `${process.env.REACT_APP_API_URL_BACKEND}/customer/message/${peerId}`,
+        `${process.env.REACT_APP_API_URL_BACKEND}/customer/message/${userId}`,
         {
           method: "GET",
           headers: { "Content-Type": "application/json" },
@@ -177,7 +175,7 @@ function StaffMessagePage() {
             justifyContent: "center",
           }}
         >
-          Chat với {name}
+          Chat với Quản lý
         </div>
 
         {/* CHAT AREA - Chỉ phần này có thể scroll */}

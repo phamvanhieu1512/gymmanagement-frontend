@@ -3,8 +3,11 @@ import { useSelector } from "react-redux";
 import { isJsonString } from "../../../utils/utils";
 import { jwtDecode } from "jwt-decode";
 import { useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeftOutlined } from "@ant-design/icons";
 
 function MessagePage() {
+  const navigate = useNavigate()
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const peerId = searchParams.get("peerId");
@@ -165,22 +168,38 @@ function MessagePage() {
       >
         {/* HEADER - Không scroll */}
         <div
-          style={{
-            padding: "15px 20px",
-            borderBottom: "1px solid #e5e5e5",
-            fontSize: 16,
-            fontWeight: 600,
-            background: "#1677ff",
-            color: "white", 
-            borderTopLeftRadius: 12,
-            borderTopRightRadius: 12,
-            flexShrink: 0, // Không co lại
-            display: "flex",
-            justifyContent: "center",
-          }}
-        >
-          Chat với {name}
-        </div>
+            style={{
+              padding: "15px 20px",
+              borderBottom: "1px solid #e5e5e5",
+              fontSize: 16,
+              fontWeight: 600,
+              background: "#1677ff",
+              color: "white",
+              borderTopLeftRadius: 12,
+              borderTopRightRadius: 12,
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              position: "relative",
+            }}
+          >
+            <span
+              style={{
+                cursor: "pointer",
+                position: "absolute",
+                left: 20,
+                color: "white", // màu icon
+                fontSize: 18,   // kích thước icon
+              }}
+              onClick={() => navigate("/admin/boxes")}
+            >
+              <ArrowLeftOutlined />
+            </span>
+
+            {/* Tiêu đề canh giữa */}
+            <span style={{ margin: "0 auto" }}>Chat với {name}</span>
+          </div>
+
 
         {/* CHAT AREA - Chỉ phần này có thể scroll */}
         <div
@@ -218,13 +237,11 @@ function MessagePage() {
 
               // Dựa vào senderRole để đổi màu: admin = đỏ, member = xanh/đen
               const bgColor =
-                m.senderRole === "admin"
-                  ? "#ff4d4f"
-                  : isMe
+                m.senderRole === isMe
                   ? "#1677ff"
                   : "#e4e6eb";
               const textColor =
-                m.senderRole === "admin" ? "#fff" : isMe ? "#fff" : "#000";
+                m.senderRole === isMe ? "#fff" : "#000";
 
               return (
                 <div key={i}>
