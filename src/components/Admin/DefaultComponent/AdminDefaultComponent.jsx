@@ -189,7 +189,7 @@ const DefaultComponent = ({ children }) => {
           <Content
             style={{
               margin: 0,
-              padding: 24,
+              // padding: 24,
               minHeight: "calc(100vh - 70px)",
               background: "#374a6fff",
               color: "#FFFFFF",
