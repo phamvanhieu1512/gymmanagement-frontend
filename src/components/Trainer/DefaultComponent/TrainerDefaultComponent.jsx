@@ -4,25 +4,25 @@ import {
   MenuUnfoldOutlined,
   DashboardOutlined,
   TeamOutlined,
-  BarChartOutlined,
+  CalendarOutlined,
+  CheckSquareOutlined,
   UserOutlined,
   LogoutOutlined,
-  CodeSandboxOutlined,
-  MessageOutlined,
+  BarChartOutlined,
   BellOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
 import { Button, Layout, Menu, Modal } from "antd";
-
 import { useNavigate, useLocation } from "react-router-dom";
 import logoTrang from "../../../assets/images/logo/logo_trang.png";
-import { StyledMenu } from "./styleDefaultComponent";
+import { StyledMenu } from "./styleTrainerDefaultComponent";
 import { useDispatch, useSelector } from "react-redux";
 import * as UserService from "../../../services/Admin/UserService";
 import { resetUser } from "../../../redux/slides/userSlice";
 
 const { Header, Sider, Content } = Layout;
 
-const DefaultComponent = ({ children }) => {
+const TrainerDefaultComponent = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,49 +38,34 @@ const DefaultComponent = ({ children }) => {
   };
 
   const menuItems = [
-    { key: "/admin", icon: <DashboardOutlined />, label: "Tổng quan" },
+    { key: "/staff", icon: <DashboardOutlined />, label: "Tổng quan" },
     {
-      key: "/admin/packages",
-      icon: <CodeSandboxOutlined />,
+      key: "/staff/members",
+      icon: <TeamOutlined />,
+      label: "Danh sách hội viên",
+    },
+    {
+      key: "/staff/packages",
+      icon: <CheckSquareOutlined />,
       label: "Quản lý gói tập",
     },
     {
-      key: "/admin/memberships",
+      key: "/staff/checkins",
       icon: <UserOutlined />,
-      label: "Quản lý hội viên",
+      label: "Quản lý Check-in",
     },
     {
-      key: "/admin/trainers",
-      icon: <TeamOutlined />,
-      label: "Quản lý huấn luyện viên",
-    },
-    {
-      key: "/admin/users",
-      icon: <TeamOutlined />,
-      label: "Quản lý người dùng",
-    },
-    {
-      key: "/admin/attendance",
+      key: "/staff/transactions",
       icon: <BarChartOutlined />,
-      label: "Quản lý điểm danh",
+      label: "Theo dõi giao dịch",
     },
     {
-      key: "/admin/transactions",
-      icon: <BarChartOutlined />,
-      label: "Theo dõi giao dịch & báo cáo",
-    },
-    {
-      key: "/admin/staffs",
-      icon: <UserOutlined />,
-      label: "Quản lý nhân viên",
-    },
-    {
-      key: "/admin/notifications",
+      key: "/staff/notifications",
       icon: <BellOutlined />,
       label: "Quản lý thông báo",
     },
     {
-      key: "/admin/boxes",
+      key: "/staff/boxes",
       icon: <MessageOutlined />,
       label: "Nhắn tin",
     },
@@ -106,9 +91,8 @@ const DefaultComponent = ({ children }) => {
   };
 
   return (
-    // Layout cha bao toàn bộ trang
-    <Layout style={{ minHeight: "100vh", background: "#1F2A40" }}>
-      {/* HEADER TRÊN CÙNG */}
+    <Layout style={{ minHeight: "100vh", background: "#F5F7FA" }}>
+      {/* HEADER */}
       <Header
         style={{
           height: 70,
@@ -118,8 +102,8 @@ const DefaultComponent = ({ children }) => {
           justifyContent: "space-between",
           padding: "0 24px",
           color: "#FFFFFF",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-          position: "fixed", // Giữ cố định trên cùng
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          position: "fixed",
           top: 0,
           left: 0,
           right: 0,
@@ -148,27 +132,28 @@ const DefaultComponent = ({ children }) => {
               borderRadius: 8,
             }}
           />
-          <h2 style={{ margin: 0, color: "#FFFFFF" }}>Quản lý GYM2P</h2>
+          <h2 style={{ margin: 0, color: "#FFFFFF", fontWeight: 500 }}>
+            Huấn luyện viên GYM2P
+          </h2>
         </div>
-
         {user?.fullName ? <div>{user.fullName}</div> : <div>Tài khoản</div>}
       </Header>
 
-      {/* Layout chính: Sidebar + Content */}
+      {/* LAYOUT CHÍNH */}
       <Layout style={{ marginTop: 70 }}>
-        {" "}
-        {/* đẩy xuống dưới header */}
+        {/* SIDEBAR */}
         <Sider
           trigger={null}
           collapsible
           collapsed={collapsed}
           style={{
             background: "#FFFFFF",
-            height: "calc(100vh - 70px)", // Trừ chiều cao của header
+            height: "calc(100vh - 70px)",
             position: "fixed",
             left: 0,
             top: 70,
             overflow: "auto",
+            borderRight: "1px solid #E0E0E0",
           }}
         >
           <StyledMenu
@@ -176,12 +161,18 @@ const DefaultComponent = ({ children }) => {
             selectedKeys={[location.pathname]}
             items={menuItems}
             onClick={handleMenuClick}
+            style={{
+              background: "#FFFFFF",
+              color: "#333333",
+            }}
+            theme="light"
           />
         </Sider>
-        {/* Nội dung chính */}
+
+        {/* CONTENT */}
         <Layout
           style={{
-            marginLeft: collapsed ? 80 : 200, // đẩy nội dung qua phải theo độ rộng sidebar
+            marginLeft: collapsed ? 80 : 200,
             transition: "all 0.3s",
             background: "#374a6fff",
           }}
@@ -192,7 +183,9 @@ const DefaultComponent = ({ children }) => {
               padding: 24,
               minHeight: "calc(100vh - 70px)",
               background: "#374a6fff",
-              color: "#FFFFFF",
+              color: "#333333",
+              borderRadius: 8,
+              boxShadow: "0 0 10px rgba(0,0,0,0.05)",
             }}
           >
             {children}
@@ -203,4 +196,4 @@ const DefaultComponent = ({ children }) => {
   );
 };
 
-export default DefaultComponent;
+export default TrainerDefaultComponent;

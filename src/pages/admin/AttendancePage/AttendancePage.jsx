@@ -8,6 +8,11 @@ import {
   message,
   Spin,
   Space,
+  Input,
+  Select,
+  DatePicker,
+  Row,
+  Col,
 } from "antd";
 import { QRCodeCanvas } from "qrcode.react";
 import * as checkInQRService from "../../../services/Admin/checkInQRService";
@@ -22,6 +27,12 @@ const AttendancePage = () => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [qrValue, setQrValue] = useState("");
   const [creatingQR, setCreatingQR] = useState(false);
+  const { RangePicker } = DatePicker;
+  const [search, setSearch] = useState("");
+  const [packageFilter, setPackageFilter] = useState(null);
+  const [trainerFilter, setTrainerFilter] = useState(null);
+  const [dateRange, setDateRange] = useState([]);
+  const [statusFilter, setStatusFilter] = useState(null);
 
   // ================================
   // Lấy danh sách membership hợp lệ
@@ -63,6 +74,63 @@ const AttendancePage = () => {
       setCreatingQR(false);
     }
   };
+
+  const packageOptions = [
+    ...new Set(
+      memberships.map((m) => ({
+        id: m.package.id,
+        name: m.package.name,
+      }))
+    ),
+  ];
+
+  const trainerOptions = [
+    ...new Set(
+      memberships
+        .filter((m) => m.trainer)
+        .map((m) => ({
+          id: m.trainer.id,
+          name: m.trainer.fullName,
+        }))
+    ),
+  ];
+
+  const filteredData = memberships.filter((m) => {
+    const keyword = search.toLowerCase();
+
+    // 1. Tìm kiếm theo tên, email, sđt
+    const matchSearch =
+      m.fullName.toLowerCase().includes(keyword) ||
+      m.email.toLowerCase().includes(keyword) ||
+      m.phone.includes(keyword);
+
+    if (!matchSearch) return false;
+
+    // 2. Lọc theo gói tập
+    if (packageFilter && m.package.id !== packageFilter) return false;
+
+    // 3. Lọc theo trainer
+    if (trainerFilter && (!m.trainer || m.trainer.id !== trainerFilter))
+      return false;
+
+    // 4. Lọc theo thời gian bắt đầu
+    if (dateRange.length === 2) {
+      const start = dayjs(m.startDate);
+      if (
+        !start.isAfter(dateRange[0].startOf("day")) ||
+        !start.isBefore(dateRange[1].endOf("day"))
+      ) {
+        return false;
+      }
+    }
+
+    // 5. Lọc theo trạng thái hạn
+    const isExpired = dayjs(m.endDate).isBefore(dayjs());
+    if (statusFilter === "expired" && !isExpired) return false;
+    if (statusFilter === "active" && isExpired) return false;
+
+    return true;
+  });
 
   // ================================
   // TABLE COLUMNS
@@ -156,9 +224,57 @@ const AttendancePage = () => {
         Quản lý điểm danh
       </Title>
 
+      <Input.Search
+        placeholder="Tìm thành viên..."
+        allowClear
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ width: 250, marginBottom: 16 }}
+      />
+
+      <Select
+        allowClear
+        placeholder="Chọn gói tập"
+        style={{ width: 200, marginLeft: 12 }}
+        onChange={setPackageFilter}
+      >
+        {packageOptions.map((p) => (
+          <Select.Option key={p.id} value={p.id}>
+            {p.name}
+          </Select.Option>
+        ))}
+      </Select>
+
+      <Select
+        allowClear
+        placeholder="Chọn HLV"
+        style={{ width: 200, marginLeft: 12 }}
+        onChange={setTrainerFilter}
+      >
+        {trainerOptions.map((t) => (
+          <Select.Option key={t.id} value={t.id}>
+            {t.name}
+          </Select.Option>
+        ))}
+      </Select>
+
+      <RangePicker
+        style={{ marginLeft: 12 }}
+        onChange={(values) => setDateRange(values || [])}
+      />
+
+      <Select
+        allowClear
+        placeholder="Trạng thái"
+        style={{ width: 160, marginLeft: 12 }}
+        onChange={setStatusFilter}
+      >
+        <Select.Option value="active">Còn hạn</Select.Option>
+        <Select.Option value="expired">Hết hạn</Select.Option>
+      </Select>
+
       <Table
         loading={isLoading}
-        dataSource={memberships}
+        dataSource={filteredData}
         columns={columns}
         rowKey="membershipId"
         pagination={{ pageSize: 8 }}

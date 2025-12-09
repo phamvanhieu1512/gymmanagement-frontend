@@ -1,12 +1,11 @@
 import CheckInLogsPage from "../pages/staff/CheckInLogsPage/CheckInLogsPage";
 import DashboardPage from "../pages/admin/DashboardPage/DashboardPage";
 import MembersPage from "../pages/staff/MembersPage/MembersPage";
-import SchedulePage from "../pages/staff/SchedulePage/SchedulePage";
 import TrainersPage from "../pages/admin/TrainersPage/TrainersPage";
 import TransactionsPage from "../pages/admin/TransactionsPage/TransactionsPage";
 import LoginPage from "../pages/Login_SignUp/LoginPage";
 import StaffDashboardPage from "../pages/staff/StaffDashboardPage/StaffDashboardPage";
-import UpdatePackagePage from "../pages/staff/UpdatePackagePage/UpdatePackagePage";
+import UpdatePackagePage from "../pages/staff/StaffPackagePage/StaffPackagePage";
 import StaffsPage from "../pages/admin/StaffsPage/StaffsPage";
 import NotFoundPage from "../pages/NotFoundPage/NotFoundPage";
 import ForgotPasswordPage from "../pages/Login_SignUp/ForgotPasswordPage";
@@ -18,6 +17,9 @@ import AttendancePage from "../pages/admin/AttendancePage/AttendancePage";
 import MessagePage from "../pages/admin/MessagePage/MessagePage";
 import NotificationPage from "../pages/admin/NotificationPage/NotificationPage";
 import BoxesMessage from "../pages/admin/MessagePage/BoxesMessages";
+import StaffNotificationPage from "../pages/staff/StaffNotificationPage/StaffNotificationPage";
+import StaffMessagePage from "../pages/staff/StaffMessagePage/StaffMessagePage";
+import StaffTransactionPage from "../pages/staff/StaffTransactionPage/StaffTransactionPage";
 
 export const routes = [
   {
@@ -87,7 +89,7 @@ export const routes = [
     page: NotificationPage, // Quản lý thông báo
     isShowMenuBarAdmin: true,
   },
- 
+
   {
     path: "/admin/messages",
     page: MessagePage, // Nhắn tin
@@ -114,7 +116,12 @@ export const routes = [
   },
   {
     path: "/staff/packages",
-    page: UpdatePackagePage, // Cập nhật gói tập / xác nhận thanh toán
+    page: UpdatePackagePage, // quản lý gói tập
+    isShowMenuBarStaff: true,
+  },
+  {
+    path: "/staff/transactions",
+    page: StaffTransactionPage, // quản lý giao dịch
     isShowMenuBarStaff: true,
   },
   {
@@ -122,11 +129,19 @@ export const routes = [
     page: CheckInLogsPage, // Quản lý check-in
     isShowMenuBarStaff: true,
   },
+
   {
-    path: "/staff/schedules",
-    page: SchedulePage, // Cập nhật lịch tập
+    path: "/staff/notifications",
+    page: StaffNotificationPage, // Quản lý thong báo
     isShowMenuBarStaff: true,
   },
+
+  {
+    path: "/staff/boxes",
+    page: StaffMessagePage, // Quản lý nhắn tin
+    isShowMenuBarStaff: true,
+  },
+
   {
     path: "*",
     page: NotFoundPage, // Đăng xuất

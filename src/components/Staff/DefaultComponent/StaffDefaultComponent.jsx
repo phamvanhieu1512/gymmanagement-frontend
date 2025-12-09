@@ -8,6 +8,9 @@ import {
   CheckSquareOutlined,
   UserOutlined,
   LogoutOutlined,
+  BarChartOutlined,
+  BellOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
 import { Button, Layout, Menu, Modal } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -44,14 +47,28 @@ const StaffDefaultComponent = ({ children }) => {
     {
       key: "/staff/packages",
       icon: <CheckSquareOutlined />,
-      label: "Cập nhật gói tập",
+      label: "Quản lý gói tập",
     },
     {
       key: "/staff/checkins",
       icon: <UserOutlined />,
       label: "Quản lý Check-in",
     },
-    { key: "/staff/schedules", icon: <CalendarOutlined />, label: "Lịch tập" },
+    {
+      key: "/staff/transactions",
+      icon: <BarChartOutlined />,
+      label: "Theo dõi giao dịch",
+    },
+    {
+      key: "/staff/notifications",
+      icon: <BellOutlined />,
+      label: "Quản lý thông báo",
+    },
+    {
+      key: "/staff/boxes",
+      icon: <MessageOutlined />,
+      label: "Nhắn tin",
+    },
     { key: "logout", icon: <LogoutOutlined />, label: "Đăng xuất" },
   ];
 
@@ -116,7 +133,7 @@ const StaffDefaultComponent = ({ children }) => {
             }}
           />
           <h2 style={{ margin: 0, color: "#FFFFFF", fontWeight: 500 }}>
-            Quản lý nhân viên GYM
+            Nhân viên GYM2P
           </h2>
         </div>
         {user?.fullName ? <div>{user.fullName}</div> : <div>Tài khoản</div>}

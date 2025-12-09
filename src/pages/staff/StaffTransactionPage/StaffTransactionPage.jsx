@@ -31,7 +31,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
-const TransactionsPage = () => {
+const StaffTransactionPage = () => {
   const [search, setSearch] = useState("");
   const [filterCustomer, setFilterCustomer] = useState("all");
   const [filterPackage, setFilterPackage] = useState("all");
@@ -298,9 +298,9 @@ const TransactionsPage = () => {
             <InfoCircleOutlined style={{ fontSize: "20px" }} />
           </Button>
 
-          <Button type="link" onClick={() => openStatusModal(record)}>
+          {/* <Button type="link" onClick={() => openStatusModal(record)}>
             <EditOutlined style={{ fontSize: "20px" }} />
-          </Button>
+          </Button> */}
         </Space>
       ),
     },
@@ -782,4 +782,4 @@ const TransactionsPage = () => {
   );
 };
 
-export default TransactionsPage;
+export default StaffTransactionPage;
