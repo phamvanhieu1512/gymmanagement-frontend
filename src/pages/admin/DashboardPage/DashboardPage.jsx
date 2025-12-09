@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, Row, Col, Statistic, Typography } from "antd";
 import {
   UserOutlined,
@@ -18,28 +18,109 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import * as TransactionService from "../../../services/Admin/TransactionService";
+import * as UserService from "../../../services/Admin/UserService";
+import * as TrainerService from "../../../services/Admin/TrainerService";
+import * as PackageService from "../../../services/Admin/PackageService";
+import dayjs from "dayjs";
+import { getValidToken } from "../../../services/getValidToken";
 
 const { Title } = Typography;
 
 const DashboardPage = () => {
-  // Dữ liệu giả lập cho demo — sau này bạn thay bằng API thật
-  const revenueData = [
-    { month: "T1", revenue: 12000000 },
-    { month: "T2", revenue: 15000000 },
-    { month: "T3", revenue: 18000000 },
-    { month: "T4", revenue: 21000000 },
-    { month: "T5", revenue: 24000000 },
-    { month: "T6", revenue: 20000000 },
-  ];
+  const [members, setMembers] = useState([]);
+  const [trainers, setTrainers] = useState([]);
+  const [packages, setPackages] = useState([]);
+  const [transactions, setTransactions] = useState([]);
 
-  const memberGrowth = [
-    { month: "T1", members: 50 },
-    { month: "T2", members: 80 },
-    { month: "T3", members: 120 },
-    { month: "T4", members: 160 },
-    { month: "T5", members: 220 },
-    { month: "T6", members: 260 },
-  ];
+  const [revenueMonth, setRevenueMonth] = useState(0);
+  const [revenueChart, setRevenueChart] = useState([]);
+  const [memberGrowth, setMemberGrowth] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = await getValidToken();
+
+      const membersRes = await UserService.getAllMembers(token);
+      const trainersRes = await TrainerService.getAllTrainers(token);
+      const packagesRes = await PackageService.getAllPackages(token);
+      const transactionsRes = await TransactionService.getAllTransactions(
+        token
+      );
+
+      const m = membersRes.data || [];
+      const t = trainersRes.data || [];
+      const p = packagesRes.data || [];
+      const tr = transactionsRes.data || [];
+
+      setMembers(m);
+      setTrainers(t);
+      setPackages(p);
+      setTransactions(tr);
+
+      computeRevenueThisMonth(tr);
+      computeRevenueChart(tr);
+      computeMemberGrowth(m);
+    };
+
+    fetchData();
+  }, []);
+
+  // ================================
+  // 🔥 1. Tính doanh thu tháng hiện tại
+  // ================================
+  const computeRevenueThisMonth = (transactions) => {
+    const currentMonth = dayjs().month();
+    const total = transactions
+      .filter(
+        (txn) =>
+          txn.status === "completed" &&
+          dayjs(txn.transactionDate).month() === currentMonth
+      )
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    setRevenueMonth(total);
+  };
+
+  // ================================
+  // 🔥 2. Tạo dữ liệu biểu đồ doanh thu theo tháng
+  // ================================
+  const computeRevenueChart = (transactions) => {
+    const months = Array(12).fill(0);
+
+    transactions.forEach((txn) => {
+      if (txn.status === "completed") {
+        const month = dayjs(txn.transactionDate).month();
+        months[month] += txn.amount;
+      }
+    });
+
+    const chart = months.map((total, index) => ({
+      month: `T${index + 1}`,
+      revenue: total,
+    }));
+
+    setRevenueChart(chart);
+  };
+
+  // ================================
+  // 🔥 3. Tạo dữ liệu tăng trưởng hội viên theo tháng
+  // ================================
+  const computeMemberGrowth = (members) => {
+    const months = Array(12).fill(0);
+
+    members.forEach((mb) => {
+      const month = dayjs(mb.createdAt).month();
+      months[month]++;
+    });
+
+    const chart = months.map((total, index) => ({
+      month: `T${index + 1}`,
+      members: total,
+    }));
+
+    setMemberGrowth(chart);
+  };
 
   return (
     <div style={{ padding: "24px" }}>
@@ -47,7 +128,6 @@ const DashboardPage = () => {
         Tổng quan hệ thống
       </Title>
 
-      {/* --- Thống kê nhanh --- */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} md={6}>
           <Card
@@ -56,12 +136,13 @@ const DashboardPage = () => {
           >
             <Statistic
               title={<span style={{ color: "#fff" }}>Tổng hội viên</span>}
-              value={256}
+              value={members.length}
               prefix={<UserOutlined style={{ color: "#fff" }} />}
               valueStyle={{ color: "#fff" }}
             />
           </Card>
         </Col>
+
         <Col xs={24} sm={12} md={6}>
           <Card
             bordered={false}
@@ -69,12 +150,13 @@ const DashboardPage = () => {
           >
             <Statistic
               title={<span style={{ color: "#fff" }}>Huấn luyện viên</span>}
-              value={18}
+              value={trainers.length}
               prefix={<TeamOutlined style={{ color: "#fff" }} />}
               valueStyle={{ color: "#fff" }}
             />
           </Card>
         </Col>
+
         <Col xs={24} sm={12} md={6}>
           <Card
             bordered={false}
@@ -84,12 +166,13 @@ const DashboardPage = () => {
               title={
                 <span style={{ color: "#fff" }}>Gói tập đang hoạt động</span>
               }
-              value={74}
+              value={packages.filter((p) => p.isActive).length}
               prefix={<CalendarOutlined style={{ color: "#fff" }} />}
               valueStyle={{ color: "#fff" }}
             />
           </Card>
         </Col>
+
         <Col xs={24} sm={12} md={6}>
           <Card
             bordered={false}
@@ -97,7 +180,7 @@ const DashboardPage = () => {
           >
             <Statistic
               title={<span style={{ color: "#fff" }}>Doanh thu tháng</span>}
-              value={24000000}
+              value={revenueMonth}
               prefix={<DollarOutlined style={{ color: "#fff" }} />}
               valueStyle={{ color: "#fff" }}
               suffix="₫"
@@ -106,7 +189,7 @@ const DashboardPage = () => {
         </Col>
       </Row>
 
-      {/* --- Biểu đồ --- */}
+      {/* --- BIỂU ĐỒ --- */}
       <Row gutter={[16, 16]} style={{ marginTop: 32 }}>
         <Col xs={24} md={12}>
           <Card
@@ -115,7 +198,7 @@ const DashboardPage = () => {
             bodyStyle={{ height: 300 }}
           >
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={revenueData}>
+              <LineChart data={revenueChart}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />

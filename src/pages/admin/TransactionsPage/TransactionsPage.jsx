@@ -23,11 +23,9 @@ import {
 import dayjs from "dayjs";
 import { getValidToken } from "../../../services/getValidToken";
 import * as TransactionService from "../../../services/Admin/TransactionService";
-import * as UserService from "../../../services/Admin/UserService"; // có getAllMembers
-import * as TrainerService from "../../../services/Admin/TrainerService"; // có getAllTrainers
-import * as PackageService from "../../../services/Admin/PackageService"; // có getAllPackages
-
-import { useMutationHook } from "../../../hooks/useMutationHook";
+import * as UserService from "../../../services/Admin/UserService";
+import * as TrainerService from "../../../services/Admin/TrainerService";
+import * as PackageService from "../../../services/Admin/PackageService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const { RangePicker } = DatePicker;
@@ -629,6 +627,7 @@ const TransactionsPage = () => {
           {/* Payment Method */}
           <Form.Item label="Phương thức thanh toán" name="paymentMethod">
             <Select allowClear>
+              <Select.Option value="all">Tất cả</Select.Option>
               <Select.Option value="direct">Tiền mặt</Select.Option>
               <Select.Option value="bank_transfer">Chuyển khoản</Select.Option>
               <Select.Option value="momo">MoMo</Select.Option>
@@ -640,6 +639,8 @@ const TransactionsPage = () => {
           {/* Status */}
           <Form.Item label="Trạng thái giao dịch" name="status">
             <Select allowClear>
+              <Select.Option value="all">Tất cả</Select.Option>
+
               <Select.Option value="pending">Pending</Select.Option>
               <Select.Option value="completed">Completed</Select.Option>
               <Select.Option value="failed">Failed</Select.Option>
