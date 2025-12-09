@@ -123,7 +123,7 @@ const DashboardPage = () => {
   };
 
   return (
-    <div style={{ padding: "24px" }}>
+    <div style={{ }}>
       <Title level={3} style={{ marginBottom: 24, color: "#fff" }}>
         Tổng quan hệ thống
       </Title>

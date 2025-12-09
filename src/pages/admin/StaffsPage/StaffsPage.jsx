@@ -303,7 +303,7 @@ const StaffsPage = () => {
             <Form.Item
               name="avatarUrl"
               hidden
-              initialValue="https://cdn-icons-png.flaticon.com/512/149/149071.png"
+              initialValue="images/logo/Default_pfp.jpg"
             >
               <Input />
             </Form.Item>

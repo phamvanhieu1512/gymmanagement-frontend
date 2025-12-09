@@ -1,9 +1,28 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+import { isJsonString } from "../../../utils/utils";
+import { jwtDecode } from "jwt-decode";
+import { useLocation } from "react-router-dom";
 
-function MessagePage({
-  userId = "68ff36d578fc9208ee291a83",
-  peerId = "68e79f4f6b9ee7a03723e90a",
-}) {
+function MessagePage() {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const peerId = searchParams.get("peerId");
+  const name = searchParams.get("name");
+
+  const user = useSelector((state) => state.user);
+  const handleDecoded = () => {
+    let storageData = localStorage.getItem("accessToken");
+    let decoded = {};
+    if (storageData && isJsonString(storageData)) {
+      storageData = JSON.parse(storageData);
+      decoded = jwtDecode(storageData);
+    }
+    return { decoded, storageData };
+  };
+  const { storageData, decoded } = handleDecoded();
+  const userId = decoded?.id;
+
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const ws = useRef(null);
@@ -14,30 +33,33 @@ function MessagePage({
   };
 
   const loadHistory = async () => {
-  try {
-    // Gửi userId qua query string
-    const res = await fetch(`http://localhost:5000/api/customer/message/${peerId}`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    });
+    try {
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL_BACKEND}/customer/message/${peerId}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
-    const result = await res.json();
-    console.log(result);
+      const result = await res.json();
 
-    if (result.success) setMessages(result.data);
-  } catch (err) {
-    console.error("Load history error:", err);
-  }
-};
+      if (result.success) setMessages(result.data);
+    } catch (err) {
+      console.error("Load history error:", err);
+    }
+  };
 
-useEffect(() => {
-  console.log("Tải lịch sử tin nhắn");
-  loadHistory();
-}, [userId]);
+  useEffect(() => {
+    console.log("Tải lịch sử tin nhắn");
+    loadHistory();
+  }, [userId]);
+   
 
 
   useEffect(() => {
-    ws.current = new WebSocket("ws://192.168.39.225:5000");
+    const urlLinkWs = `ws://${process.env.REACT_APP_API_URL_ADMIN}`
+    ws.current = new WebSocket(urlLinkWs);
 
     ws.current.onopen = () => {
       ws.current.send(
@@ -118,25 +140,30 @@ useEffect(() => {
   return (
     <div
       style={{
-        height: "100vh",
+        height: "calc(100vh - 70px)",
         padding: "20px",
         display: "flex",
         justifyContent: "center",
         background: "#f0f2f5",
+        // Cố định giao diện tổng thể, không cho scroll
+        overflow: "hidden",
+        boxSizing: "border-box",
       }}
     >
       <div
         style={{
-          width: "750px",
-          height: "85vh",
+          width: "125vh",
+          height: "90vh",
           background: "#ffffff",
           borderRadius: 12,
           boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
           display: "flex",
           flexDirection: "column",
+          // Cố định container chính
+          overflow: "hidden",
         }}
       >
-        {/* HEADER */}
+        {/* HEADER - Không scroll */}
         <div
           style={{
             padding: "15px 20px",
@@ -144,21 +171,26 @@ useEffect(() => {
             fontSize: 16,
             fontWeight: 600,
             background: "#1677ff",
-            color: "white",
+            color: "white", 
             borderTopLeftRadius: 12,
             borderTopRightRadius: 12,
+            flexShrink: 0, // Không co lại
+            display: "flex",
+            justifyContent: "center",
           }}
         >
-          Chat với {peerId}
+          Chat với {name}
         </div>
 
-        {/* CHAT AREA */}
+        {/* CHAT AREA - Chỉ phần này có thể scroll */}
         <div
           style={{
             flex: 1,
             padding: "20px",
             background: "#f6f7f9",
-            overflowY: "auto",
+            overflowY: "auto", // Chỉ phần này có thể cuộn
+            display: "flex",
+            flexDirection: "column",
           }}
         >
           {messages.length === 0 ? (
@@ -167,79 +199,89 @@ useEffect(() => {
                 textAlign: "center",
                 color: "#999",
                 marginTop: "50%",
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
               Chưa có tin nhắn
             </div>
           ) : (
             messages.map((m, i) => {
-  const isMe = m.from === userId;
-  const showDate =
-    i === 0 ||
-    new Date(m.timestamp).toDateString() !==
-      new Date(messages[i - 1].timestamp).toDateString();
+              const isMe = m.from === userId;
+              const showDate =
+                i === 0 ||
+                new Date(m.timestamp).toDateString() !==
+                  new Date(messages[i - 1].timestamp).toDateString();
 
-  // Dựa vào senderRole để đổi màu: admin = đỏ, member = xanh/đen
-  const bgColor = m.senderRole === "admin" ? "#ff4d4f" : isMe ? "#1677ff" : "#e4e6eb";
-  const textColor = m.senderRole === "admin" ? "#fff" : isMe ? "#fff" : "#000";
+              // Dựa vào senderRole để đổi màu: admin = đỏ, member = xanh/đen
+              const bgColor =
+                m.senderRole === "admin"
+                  ? "#ff4d4f"
+                  : isMe
+                  ? "#1677ff"
+                  : "#e4e6eb";
+              const textColor =
+                m.senderRole === "admin" ? "#fff" : isMe ? "#fff" : "#000";
 
-  return (
-    <div key={i}>
-      {showDate && (
-        <div
-          style={{
-            textAlign: "center",
-            margin: "10px 0",
-            color: "#888",
-            fontSize: 12,
-          }}
-        >
-          {formatDate(m.timestamp)}
-        </div>
-      )}
+              return (
+                <div key={i}>
+                  {showDate && (
+                    <div
+                      style={{
+                        textAlign: "center",
+                        margin: "10px 0",
+                        color: "#888",
+                        fontSize: 12,
+                      }}
+                    >
+                      {formatDate(m.timestamp)}
+                    </div>
+                  )}
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: isMe ? "flex-end" : "flex-start",
-          marginBottom: 8,
-          flexDirection: "column",
-          alignItems: isMe ? "flex-end" : "flex-start",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "65%",
-            padding: "10px 14px",
-            borderRadius: 16,
-            background: bgColor,
-            color: textColor,
-            fontSize: 15,
-            lineHeight: "20px",
-          }}
-        >
-          {m.text}
-        </div>
-        <div
-          style={{
-            fontSize: 10,
-            color: "#888",
-            marginTop: 4,
-          }}
-        >
-          {formatTime(m.timestamp)}
-        </div>
-      </div>
-    </div>
-  );
-})
-
-
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: isMe ? "flex-end" : "flex-start",
+                      marginBottom: 8,
+                      flexDirection: "column",
+                      alignItems: isMe ? "flex-end" : "flex-start",
+                    }}
+                  >
+                    <div
+                      style={{
+                        maxWidth: "65%",
+                        padding: "10px 14px",
+                        borderRadius: 16,
+                        background: bgColor,
+                        color: textColor,
+                        fontSize: 15,
+                        lineHeight: "20px",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {m.text}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: "#888",
+                        marginTop: 4,
+                      }}
+                    >
+                      {formatTime(m.timestamp)}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* INPUT AREA */}
+        {/* INPUT AREA - Không scroll */}
         <div
           style={{
             padding: "12px 18px",
@@ -249,6 +291,8 @@ useEffect(() => {
             background: "#fff",
             borderBottomLeftRadius: 12,
             borderBottomRightRadius: 12,
+            flexShrink: 0, // Không co lại
+            color: "black"
           }}
         >
           <input
@@ -260,7 +304,7 @@ useEffect(() => {
               flex: 1,
               padding: "12px 15px",
               borderRadius: 25,
-              border: "1px solid #ccc",
+              border: "1px solid black",
               outline: "none",
               fontSize: 15,
             }}
