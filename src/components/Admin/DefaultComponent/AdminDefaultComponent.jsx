@@ -79,8 +79,13 @@ const DefaultComponent = ({ children }) => {
       icon: <BellOutlined />,
       label: "Quản lý thông báo",
     },
+    // {
+    //   key: "/admin/boxes",
+    //   icon: <MessageOutlined />,
+    //   label: "Nhắn tin",
+    // },
     {
-      key: "/admin/boxes",
+      key: "/admin/all-boxes",
       icon: <MessageOutlined />,
       label: "Nhắn tin",
     },

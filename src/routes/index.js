@@ -20,6 +20,11 @@ import BoxesMessage from "../pages/admin/MessagePage/BoxesMessages";
 import StaffNotificationPage from "../pages/staff/StaffNotificationPage/StaffNotificationPage";
 import StaffMessagePage from "../pages/staff/StaffMessagePage/StaffMessagePage";
 import StaffTransactionPage from "../pages/staff/StaffTransactionPage/StaffTransactionPage";
+import BoxesMessageStaff from "../pages/staff/StaffMessagePage/Boxes";
+import MessagePageStaff from "../pages/staff/StaffMessagePage/InputMessage";
+// import MessagePageAdmin from "../pages/admin/";
+import BoxesMessageAll from "../pages/admin/MessagesAllPage/BoxesMessages";
+import MessagePageAdminAll from "../pages/admin/MessagesAllPage/InputMesaages";
 
 export const routes = [
   {
@@ -101,6 +106,26 @@ export const routes = [
     isShowMenuBarAdmin: true,
   },
 
+
+
+
+
+
+
+
+  {
+    path: "/admin/all-boxes",
+    page: BoxesMessageAll, // Nhắn tin
+    isShowMenuBarAdmin: true,
+  },
+  {
+    path: "/admin/messagesbyid",
+    page: MessagePageAdminAll, // Nhắn tin
+    isShowMenuBarAdmin: true,
+  },
+
+
+
   // STAFF ROUTES
   {
     path: "/staff",
@@ -139,6 +164,20 @@ export const routes = [
   {
     path: "/staff/boxes",
     page: StaffMessagePage, // Quản lý nhắn tin
+    isShowMenuBarStaff: true,
+  },
+
+  // staff 
+  {
+    path: "/staff/message-boxes",
+    page: BoxesMessageStaff, // Quản lý nhắn tin
+    isShowMenuBarStaff: true,
+  },
+
+  // input message staff
+  {
+    path: "/staff/messages",
+    page: MessagePageStaff, 
     isShowMenuBarStaff: true,
   },
 

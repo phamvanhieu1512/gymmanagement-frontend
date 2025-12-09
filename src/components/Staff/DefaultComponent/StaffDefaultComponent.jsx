@@ -64,8 +64,13 @@ const StaffDefaultComponent = ({ children }) => {
       icon: <BellOutlined />,
       label: "Quản lý thông báo",
     },
+    // {
+    //   key: "/staff/boxes",
+    //   icon: <MessageOutlined />,
+    //   label: "Nhắn tin",
+    // },
     {
-      key: "/staff/boxes",
+      key: "/staff/message-boxes",
       icon: <MessageOutlined />,
       label: "Nhắn tin",
     },
