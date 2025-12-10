@@ -33,7 +33,7 @@ import { getValidToken } from "../../../services/getValidToken";
 import { Upload } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 
-const TrainersPage = () => {
+const StaffTrainerPage = () => {
   const { Title } = Typography;
   const { Search } = Input;
   const [searchValue, setSearchValue] = useState("");
@@ -246,13 +246,13 @@ const TrainersPage = () => {
           Quản lý huấn luyện viên
         </Title>
 
-        <Button
+        {/* <Button
           onClick={() => setIsModalOpen(true)}
           type="primary"
           icon={<PlusOutlined />}
         >
           Thêm huấn luyện viên
-        </Button>
+        </Button> */}
       </div>
 
       <div
@@ -382,15 +382,15 @@ const TrainersPage = () => {
             title: "Hành động",
             render: (_, record) => (
               <Space>
-                <Button onClick={() => openReviewsModal(record)}>
+                {/* <Button onClick={() => openReviewsModal(record)}>
                   <CommentOutlined />
-                </Button>
+                </Button> */}
                 <Button onClick={() => infoMember(record)}>
                   <InfoCircleOutlined />
                 </Button>
-                <Button onClick={() => openEditModal(record)}>
+                {/* <Button onClick={() => openEditModal(record)}>
                   <EditOutlined />
-                </Button>
+                </Button> */}
               </Space>
             ),
           },
@@ -864,4 +864,4 @@ const TrainersPage = () => {
   );
 };
 
-export default TrainersPage;
+export default StaffTrainerPage;

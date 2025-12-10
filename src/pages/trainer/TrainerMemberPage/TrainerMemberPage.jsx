@@ -65,24 +65,24 @@ const TrainerMemberPage = () => {
     queryFn: getAllMembers,
   });
 
-  const handleResetPassword = async (email) => {
-    try {
-      const token = await getValidToken();
+  // const handleResetPassword = async (email) => {
+  //   try {
+  //     const token = await getValidToken();
 
-      const res = await UserService.resetPasswordUser({ email }, token);
+  //     const res = await UserService.resetPasswordUser({ email }, token);
 
-      if (res.status === "OK") {
-        message.success(
-          `Reset mật khẩu thành công! Mật khẩu mới: ${res.newPassword}`
-        );
-      } else {
-        message.error(res.message || "Reset mật khẩu thất bại");
-      }
-    } catch (error) {
-      message.error("Lỗi hệ thống! Không thể reset mật khẩu");
-      console.error(error);
-    }
-  };
+  //     if (res.status === "OK") {
+  //       message.success(
+  //         `Reset mật khẩu thành công! Mật khẩu mới: ${res.newPassword}`
+  //       );
+  //     } else {
+  //       message.error(res.message || "Reset mật khẩu thất bại");
+  //     }
+  //   } catch (error) {
+  //     message.error("Lỗi hệ thống! Không thể reset mật khẩu");
+  //     console.error(error);
+  //   }
+  // };
 
   const filteredUsers = usersData?.data.filter((user) => {
     const search = searchValue.toLowerCase();

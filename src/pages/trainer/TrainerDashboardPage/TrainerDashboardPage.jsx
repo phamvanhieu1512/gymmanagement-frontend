@@ -173,7 +173,7 @@ const TrainerDashboardPage = () => {
           </Card>
         </Col>
 
-        <Col xs={24} sm={12} md={6}>
+        {/* <Col xs={24} sm={12} md={6}>
           <Card
             bordered={false}
             style={{ borderRadius: 12, background: "#03A9F4" }}
@@ -186,11 +186,11 @@ const TrainerDashboardPage = () => {
               suffix="₫"
             />
           </Card>
-        </Col>
+        </Col> */}
       </Row>
 
       {/* --- BIỂU ĐỒ --- */}
-      <Row gutter={[16, 16]} style={{ marginTop: 32 }}>
+      {/* <Row gutter={[16, 16]} style={{ marginTop: 32 }}>
         <Col xs={24} md={12}>
           <Card
             title="📈 Doanh thu theo tháng"
@@ -233,7 +233,7 @@ const TrainerDashboardPage = () => {
             </ResponsiveContainer>
           </Card>
         </Col>
-      </Row>
+      </Row> */}
     </div>
   );
 };

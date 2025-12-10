@@ -38,12 +38,16 @@ const TrainerDefaultComponent = ({ children }) => {
   };
 
   const menuItems = [
-    { key: "/trainer", icon: <DashboardOutlined />, label: "Tổng quan" },
     {
-      key: "/trainer/memberships",
-      icon: <TeamOutlined />,
+      key: "/trainer",
+      icon: <DashboardOutlined />,
       label: "Danh sách hội viên",
     },
+    // {
+    //   key: "/trainer/memberships",
+    //   icon: <TeamOutlined />,
+    //   label: "Danh sách hội viên",
+    // },
     {
       key: "/trainer/members",
       icon: <CheckSquareOutlined />,

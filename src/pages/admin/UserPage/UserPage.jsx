@@ -68,12 +68,11 @@ const UserPage = () => {
   const handleResetPassword = async (email) => {
     try {
       const token = await getValidToken();
-
-      const res = await UserService.resetPasswordUser({ email }, token);
+      const res = await UserService.resetPasswordUser(email, token);
 
       if (res.status === "OK") {
         message.success(
-          `Reset mật khẩu thành công! Mật khẩu mới: ${res.newPassword}`
+          "Reset mật khẩu thành công! Mật khẩu đã được gửi đến email người dùng."
         );
       } else {
         message.error(res.message || "Reset mật khẩu thất bại");

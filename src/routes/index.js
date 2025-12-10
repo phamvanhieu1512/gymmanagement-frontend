@@ -29,6 +29,7 @@ import TrainerDashboardPage from "../pages/trainer/TrainerDashboardPage/TrainerD
 import TrainerMemberShipPage from "../pages/trainer/TrainerMemberShipPage/TrainerMemberShipPage";
 import TrainerMemberPage from "../pages/trainer/TrainerMemberPage/TrainerMemberPage";
 import TrainerNotificationPage from "../pages/trainer/TrainerNotificationPage/TrainerNotificationPage";
+import StaffTrainerPage from "../pages/staff/StaffTrainerPage/StaffTrainerPage";
 
 export const routes = [
   {
@@ -134,6 +135,12 @@ export const routes = [
     page: MembersPage, // Xem hội viên
     isShowMenuBarStaff: true,
   },
+
+  {
+    path: "/staff/trainers",
+    page: StaffTrainerPage,
+    isShowMenuBarStaff: true,
+  },
   {
     path: "/staff/packages",
     page: UpdatePackagePage, // quản lý gói tập
@@ -178,18 +185,19 @@ export const routes = [
 
   // TRAINER ROUTES
 
+  // {
+  //   path: "/trainer",
+  //   page: TrainerDashboardPage,
+  //   isShowMenuBarTrainer: true,
+
+  // },
+
   {
     path: "/trainer",
-    page: TrainerDashboardPage,
+    page: TrainerMemberShipPage,
     isShowMenuBarTrainer: true,
     isPrivate: true,
     allowedRoles: ["trainer"],
-  },
-
-  {
-    path: "/trainer/memberships",
-    page: TrainerMemberShipPage,
-    isShowMenuBarTrainer: true,
   },
 
   {

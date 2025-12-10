@@ -106,7 +106,7 @@ const TrainerNotificationPage = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <Card title="Gửi thông báo" bordered={false} style={{ marginBottom: 30 }}>
+      {/* <Card title="Gửi thông báo" bordered={false} style={{ marginBottom: 30 }}>
         <div style={{ display: "flex", gap: 12 }}>
           <Button
             type="primary"
@@ -137,7 +137,7 @@ const TrainerNotificationPage = () => {
             Gửi cho Tất cả Users
           </Button>
         </div>
-      </Card>
+      </Card> */}
 
       {/* Modal gửi single cho member */}
       <Modal

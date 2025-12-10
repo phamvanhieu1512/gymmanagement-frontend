@@ -127,7 +127,6 @@ export const getAllMembersAndStaffsAdmin = async (access_token, userId) => {
         headers: {
           token: `Bearer ${access_token}`,
         },
-        
       }
     );
     return res.data;
@@ -207,20 +206,21 @@ export const getDetailsTrainer = async (id, access_token) => {
   }
 };
 
-export const resetPasswordUser = async (data, access_token) => {
+export const resetPasswordUser = async (email, access_token) => {
   try {
     const res = await axios.post(
       `${process.env.REACT_APP_API_URL_BACKEND}/user/reset-password`,
-      data,
+      { email },
       {
         headers: {
           token: `Bearer ${access_token}`,
         },
       }
     );
+
     return res.data;
   } catch (error) {
-    console.log("Axios error:", error);
+    console.error("Axios resetPasswordUser error:", error);
     throw error;
   }
 };

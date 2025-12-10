@@ -476,7 +476,7 @@ const TrainerMemberShipPage = () => {
             <div style={{ height: 12 }} />
 
             {/* Phần: Lịch sử check-in (nếu có) */}
-            <div>
+            {/* <div>
               <h3 style={{ marginBottom: 8 }}>Lịch sử check-in</h3>
               {Array.isArray(selected.checkInDates) &&
               selected.checkInDates.length > 0 ? (
@@ -508,7 +508,7 @@ const TrainerMemberShipPage = () => {
               ) : (
                 <Empty description="Chưa có check-in" />
               )}
-            </div>
+            </div> */}
           </>
         ) : (
           <div>Đang tải...</div>

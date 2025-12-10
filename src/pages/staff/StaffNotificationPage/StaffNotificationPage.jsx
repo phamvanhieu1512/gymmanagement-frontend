@@ -118,7 +118,7 @@ const StaffNotificationPage = () => {
             Gửi cho Member
           </Button>
 
-          <Button
+          {/* <Button
             type="primary"
             onClick={() => {
               fetchTrainers();
@@ -126,7 +126,7 @@ const StaffNotificationPage = () => {
             }}
           >
             Gửi cho Trainer
-          </Button>
+          </Button> */}
 
           <Button
             type="primary"

@@ -45,6 +45,11 @@ const StaffDefaultComponent = ({ children }) => {
       label: "Danh sách hội viên",
     },
     {
+      key: "/staff/trainers",
+      icon: <TeamOutlined />,
+      label: "Danh sách huấn luyện viên",
+    },
+    {
       key: "/staff/packages",
       icon: <CheckSquareOutlined />,
       label: "Quản lý gói tập",
