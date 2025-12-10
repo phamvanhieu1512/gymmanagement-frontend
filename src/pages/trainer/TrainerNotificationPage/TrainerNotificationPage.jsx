@@ -19,7 +19,7 @@ import { useMutationHook } from "../../../hooks/useMutationHook";
 
 const { Option } = Select;
 
-const NotificationPage = () => {
+const TrainerNotificationPage = () => {
   const [form] = Form.useForm();
   const queryClient = useQueryClient();
 
@@ -118,7 +118,7 @@ const NotificationPage = () => {
             Gửi cho Member
           </Button>
 
-          {/* <Button
+          <Button
             type="primary"
             onClick={() => {
               fetchTrainers();
@@ -126,7 +126,7 @@ const NotificationPage = () => {
             }}
           >
             Gửi cho Trainer
-          </Button> */}
+          </Button>
 
           <Button
             type="primary"
@@ -293,4 +293,4 @@ const NotificationPage = () => {
   );
 };
 
-export default NotificationPage;
+export default TrainerNotificationPage;

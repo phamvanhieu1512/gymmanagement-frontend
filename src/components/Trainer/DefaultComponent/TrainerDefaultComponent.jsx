@@ -38,36 +38,21 @@ const TrainerDefaultComponent = ({ children }) => {
   };
 
   const menuItems = [
-    { key: "/staff", icon: <DashboardOutlined />, label: "Tổng quan" },
+    { key: "/trainer", icon: <DashboardOutlined />, label: "Tổng quan" },
     {
-      key: "/staff/members",
+      key: "/trainer/memberships",
       icon: <TeamOutlined />,
       label: "Danh sách hội viên",
     },
     {
-      key: "/staff/packages",
+      key: "/trainer/members",
       icon: <CheckSquareOutlined />,
-      label: "Quản lý gói tập",
+      label: "Quản lý Người dùng",
     },
     {
-      key: "/staff/checkins",
-      icon: <UserOutlined />,
-      label: "Quản lý Check-in",
-    },
-    {
-      key: "/staff/transactions",
-      icon: <BarChartOutlined />,
-      label: "Theo dõi giao dịch",
-    },
-    {
-      key: "/staff/notifications",
+      key: "/trainer/notifications",
       icon: <BellOutlined />,
       label: "Quản lý thông báo",
-    },
-    {
-      key: "/staff/boxes",
-      icon: <MessageOutlined />,
-      label: "Nhắn tin",
     },
     { key: "logout", icon: <LogoutOutlined />, label: "Đăng xuất" },
   ];

@@ -13,6 +13,7 @@ import {
   Select,
   Modal,
   Form,
+  Spin,
 } from "antd";
 import {
   EditOutlined,
@@ -32,103 +33,71 @@ const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 const StaffTransactionPage = () => {
+  // Filters / UI state
   const [search, setSearch] = useState("");
   const [filterCustomer, setFilterCustomer] = useState("all");
   const [filterPackage, setFilterPackage] = useState("all");
   const [filterPaymentMethod, setFilterPaymentMethod] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [dateRange, setDateRange] = useState([]);
+
+  // Modals & selected
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
-  const queryClient = useQueryClient();
+
+  // Export modal
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportType, setExportType] = useState(null);
+
+  // Create transaction modal + form
   const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [formCreate] = Form.useForm();
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [selectedTrainer, setSelectedTrainer] = useState(null);
+
+  // OTP flow state
+  const [otpModalVisible, setOtpModalVisible] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [transactionTempData, setTransactionTempData] = useState(null);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [creatingDirect, setCreatingDirect] = useState(false);
+
+  // Data lists
   const [members, setMembers] = useState([]);
   const [trainers, setTrainers] = useState([]);
   const [packages, setPackages] = useState([]);
-  const [selectedPackage, setSelectedPackage] = useState(null);
-  const [selectedTrainer, setSelectedTrainer] = useState(null);
-  const [formCreate] = Form.useForm();
 
+  const queryClient = useQueryClient();
+
+  // Fetch members/trainers/packages for selects
   useEffect(() => {
     const fetchData = async () => {
-      const token = await getValidToken();
-      const membersRes = await UserService.getAllMembers(token);
-      const trainersRes = await TrainerService.getAllTrainers(token);
-      const packagesRes = await PackageService.getAllPackages(token);
+      try {
+        const token = await getValidToken();
+        const [membersRes, trainersRes, packagesRes] = await Promise.all([
+          UserService.getAllMembers(token),
+          TrainerService.getAllTrainers(token),
+          PackageService.getAllPackages(token),
+        ]);
 
-      setMembers(membersRes.data || []);
-      setTrainers(trainersRes.data || []);
-      setPackages(packagesRes.data || []);
+        setMembers(membersRes.data || []);
+        setTrainers(trainersRes.data || []);
+        // Ensure packages contain trainer info if populated by backend
+        setPackages(packagesRes.data || []);
+      } catch (err) {
+        console.error("Fetch select lists error:", err);
+      }
     };
     fetchData();
   }, []);
 
-  const openDetailModal = (transaction) => {
-    setSelectedTransaction(transaction);
-    setDetailModalVisible(true);
-  };
-
-  const closeDetailModal = () => {
-    setDetailModalVisible(false);
-    setSelectedTransaction(null);
-  };
-
-  const openStatusModal = (record) => {
-    setSelectedTransaction(record);
-    setIsStatusModalOpen(true);
-  };
-
-  const closeStatusModal = () => {
-    setIsStatusModalOpen(false);
-    setSelectedTransaction(null);
-  };
-
-  const handleExportSubmit = async (values) => {
-    try {
-      const token = await getValidToken();
-
-      const filters = {
-        from: values.dateRange[0].startOf("day").toISOString(),
-        to: values.dateRange[1].endOf("day").toISOString(),
-        paymentMethod: values.paymentMethod || null,
-        status: values.status || null,
-      };
-
-      let res;
-
-      if (exportType === "excel") {
-        res = await TransactionService.exportExcel(filters, token);
-      } else {
-        res = await TransactionService.exportPDF(filters, token);
-      }
-
-      const blob = new Blob([res.data], {
-        type: res.headers["content-type"],
-      });
-
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = exportType === "excel" ? "report.xlsx" : "report.pdf";
-      link.click();
-      window.URL.revokeObjectURL(url);
-
-      message.success("Xuất file thành công!");
-      setIsExportModalOpen(false);
-    } catch (err) {
-      console.log(err);
-      message.error("Xuất file thất bại!");
-    }
-  };
-
+  // Transactions query
   const getAllTransactions = async () => {
     const token = await getValidToken();
     if (!token)
       return { status: "ERROR", message: "Token không hợp lệ", data: [] };
-
     return TransactionService.getAllTransactions(token);
   };
 
@@ -141,29 +110,7 @@ const StaffTransactionPage = () => {
     queryFn: getAllTransactions,
   });
 
-  const handleUpdateStatus = async (values) => {
-    try {
-      const token = await getValidToken();
-
-      const res = await TransactionService.updateTransaction(
-        selectedTransaction.id,
-        values,
-        token
-      );
-
-      if (res.status === "OK") {
-        message.success("Cập nhật giao dịch thành công");
-        closeStatusModal();
-        queryClient.invalidateQueries(["transactions"]);
-      } else {
-        message.error(res.message);
-      }
-    } catch (err) {
-      message.error("Lỗi khi cập nhật giao dịch");
-      console.error(err);
-    }
-  };
-
+  // Derived transactions array for table
   const transactions = (transactionsData?.data || []).map((tx) => ({
     id: tx._id,
     transactionCode: tx.transactionCode || "N/A",
@@ -192,6 +139,7 @@ const StaffTransactionPage = () => {
     updatedAt: tx.updatedAt,
   }));
 
+  // Filtering
   const filteredData = transactions.filter((tx) => {
     const matchSearch =
       tx.customerName.toLowerCase().includes(search.toLowerCase()) ||
@@ -199,15 +147,12 @@ const StaffTransactionPage = () => {
 
     const matchCustomer =
       filterCustomer === "all" ? true : tx.customerId === filterCustomer;
-
     const matchPackage =
       filterPackage === "all" ? true : tx.packageId === filterPackage;
-
     const matchPayment =
       filterPaymentMethod === "all"
         ? true
         : tx.paymentMethod === filterPaymentMethod;
-
     const matchStatus =
       filterStatus === "all" ? true : tx.status === filterStatus;
 
@@ -227,6 +172,7 @@ const StaffTransactionPage = () => {
     );
   });
 
+  // Table columns
   const columns = [
     {
       title: "Khách hàng",
@@ -298,14 +244,241 @@ const StaffTransactionPage = () => {
             <InfoCircleOutlined style={{ fontSize: "20px" }} />
           </Button>
 
-          {/* <Button type="link" onClick={() => openStatusModal(record)}>
+          <Button type="link" onClick={() => openStatusModal(record)}>
             <EditOutlined style={{ fontSize: "20px" }} />
-          </Button> */}
+          </Button>
         </Space>
       ),
     },
   ];
 
+  // Detail modal handlers
+  const openDetailModal = (transaction) => {
+    setSelectedTransaction(transaction);
+    setDetailModalVisible(true);
+  };
+  const closeDetailModal = () => {
+    setDetailModalVisible(false);
+    setSelectedTransaction(null);
+  };
+
+  // Status modal handlers
+  const openStatusModal = (record) => {
+    setSelectedTransaction(record);
+    setIsStatusModalOpen(true);
+  };
+  const closeStatusModal = () => {
+    setIsStatusModalOpen(false);
+    setSelectedTransaction(null);
+  };
+
+  // Export submit (same as your implementation)
+  const handleExportSubmit = async (values) => {
+    try {
+      const token = await getValidToken();
+
+      const filters = {
+        from: values.dateRange[0].startOf("day").toISOString(),
+        to: values.dateRange[1].endOf("day").toISOString(),
+        paymentMethod: values.paymentMethod || null,
+        status: values.status || null,
+      };
+
+      let res;
+
+      if (exportType === "excel") {
+        res = await TransactionService.exportExcel(filters, token);
+      } else {
+        res = await TransactionService.exportPDF(filters, token);
+      }
+
+      const blob = new Blob([res.data], {
+        type: res.headers["content-type"],
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = exportType === "excel" ? "report.xlsx" : "report.pdf";
+      link.click();
+      window.URL.revokeObjectURL(url);
+
+      message.success("Xuất file thành công!");
+      setIsExportModalOpen(false);
+    } catch (err) {
+      console.log(err);
+      message.error("Xuất file thất bại!");
+    }
+  };
+
+  // Update transaction status (reuse your code)
+  const handleUpdateStatus = async (values) => {
+    try {
+      const token = await getValidToken();
+
+      const res = await TransactionService.updateTransaction(
+        selectedTransaction.id,
+        values,
+        token
+      );
+
+      if (res.status === "OK") {
+        message.success("Cập nhật giao dịch thành công");
+        closeStatusModal();
+        queryClient.invalidateQueries(["transactions"]);
+      } else {
+        message.error(res.message);
+      }
+    } catch (err) {
+      message.error("Lỗi khi cập nhật giao dịch");
+      console.error(err);
+    }
+  };
+
+  // -----------------------
+  // OTP + Create Direct Flow
+  // -----------------------
+
+  // 1) Send OTP from create modal
+  const handleSendOTP = async () => {
+    try {
+      // validate form first
+      const values = await formCreate.validateFields();
+      const selectedPkg = packages.find((p) => p._id === values.packageId);
+
+      const trainerIdToSend =
+        selectedPkg?.type === "personal_trainer" && selectedPkg?.trainerId
+          ? selectedPkg.trainerId
+          : values.trainerId || null;
+
+      const body = {
+        userId: values.userId,
+        packageId: values.packageId,
+        trainerId: trainerIdToSend,
+      };
+
+      setSendingOtp(true);
+      const token = await getValidToken();
+      const res = await TransactionService.sendDirectTransactionOTP(
+        body,
+        token
+      );
+
+      if (res.status === "OK") {
+        message.success("OTP đã được gửi đến email khách hàng");
+        setTransactionTempData(body);
+        setOtpModalVisible(true);
+      } else {
+        message.error(res.message || "Gửi OTP thất bại");
+      }
+    } catch (err) {
+      // validation errors or API errors
+      if (err?.errorFields) {
+        // form validation: ignore, Antd already highlights
+      } else {
+        console.error("Send OTP error:", err);
+        message.error("Gửi OTP thất bại");
+      }
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  // 2) Verify OTP and create transaction on success
+  const handleVerifyOTP = async () => {
+    try {
+      if (!transactionTempData) {
+        message.error("Không có dữ liệu giao dịch tạm");
+        return;
+      }
+      if (!otpCode || otpCode.trim().length === 0) {
+        message.error("Vui lòng nhập mã OTP");
+        return;
+      }
+
+      setVerifyingOtp(true);
+      const verifyRes = await TransactionService.verifyDirectTransactionOTP({
+        memberId: transactionTempData.userId,
+        otp: otpCode.trim(),
+      });
+
+      if (verifyRes.status !== "OK") {
+        message.error(verifyRes.message || "OTP không hợp lệ");
+        return;
+      }
+
+      // OTP đúng → tạo giao dịch trực tiếp
+      setCreatingDirect(true);
+      const token = await getValidToken();
+      const createRes = await TransactionService.createTransactionDirect(
+        transactionTempData,
+        token
+      );
+
+      if (createRes.status === "OK") {
+        message.success(createRes.message || "Tạo giao dịch thành công");
+        setOtpModalVisible(false);
+        setCreateModalVisible(false);
+        formCreate.resetFields();
+        setOtpCode("");
+        setTransactionTempData(null);
+        // reload transactions
+        queryClient.invalidateQueries(["transactions"]);
+        refetch();
+      } else {
+        // If create fails after OTP (rare), show message
+        message.error(createRes.message || "Tạo giao dịch thất bại");
+      }
+    } catch (err) {
+      console.error("Verify OTP error:", err);
+      message.error("Xác minh OTP thất bại");
+    } finally {
+      setVerifyingOtp(false);
+      setCreatingDirect(false);
+    }
+  };
+
+  // Optional: allow admin to directly create transaction without OTP (keep existing)
+  const handleDirectCreateNoOtp = async (values) => {
+    try {
+      setCreatingDirect(true);
+      const selectedPkg = packages.find((p) => p._id === values.packageId);
+
+      const trainerIdToSend =
+        selectedPkg?.type === "personal_trainer" && selectedPkg?.trainerId
+          ? selectedPkg.trainerId
+          : values.trainerId || null;
+
+      const token = await getValidToken();
+      const res = await TransactionService.createTransactionDirect(
+        {
+          userId: values.userId,
+          packageId: values.packageId,
+          trainerId: trainerIdToSend,
+        },
+        token
+      );
+
+      if (res.status === "OK") {
+        message.success(res.message || "Tạo giao dịch trực tiếp thành công");
+        setCreateModalVisible(false);
+        formCreate.resetFields();
+        queryClient.invalidateQueries(["transactions"]);
+        refetch();
+      } else {
+        message.error(res.message || "Tạo giao dịch thất bại");
+      }
+    } catch (err) {
+      console.error("Direct create error:", err);
+      message.error("Tạo giao dịch thất bại");
+    } finally {
+      setCreatingDirect(false);
+    }
+  };
+
+  // -----------------------
+  // JSX
+  // -----------------------
   return (
     <div style={{ padding: 24 }}>
       <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
@@ -363,9 +536,7 @@ const StaffTransactionPage = () => {
               <Option value="all">Tất cả khách hàng</Option>
               {transactions
                 .map((t) => ({ name: t.customerName, id: t.customerId }))
-                .filter(
-                  (v, i, a) => a.findIndex((x) => x.id === v.id) === i // unique
-                )
+                .filter((v, i, a) => a.findIndex((x) => x.id === v.id) === i)
                 .map((user) => (
                   <Option key={user.id} value={user.id}>
                     {user.name}
@@ -385,9 +556,7 @@ const StaffTransactionPage = () => {
               <Option value="all">Tất cả gói tập</Option>
               {transactions
                 .map((t) => ({ name: t.packageName, id: t.packageId }))
-                .filter(
-                  (v, i, a) => a.findIndex((x) => x.id === v.id) === i // unique
-                )
+                .filter((v, i, a) => a.findIndex((x) => x.id === v.id) === i)
                 .map((pkg) => (
                   <Option key={pkg.id} value={pkg.id}>
                     {pkg.name}
@@ -438,7 +607,7 @@ const StaffTransactionPage = () => {
         </Row>
       </Card>
 
-      {/* Bảng giao dịch */}
+      {/* Table */}
       <Card bodyStyle={{ padding: 0 }}>
         <Table
           dataSource={filteredData}
@@ -449,6 +618,7 @@ const StaffTransactionPage = () => {
         />
       </Card>
 
+      {/* Detail Modal */}
       <Modal
         title="Chi tiết giao dịch"
         open={detailModalVisible}
@@ -458,7 +628,6 @@ const StaffTransactionPage = () => {
       >
         {selectedTransaction && (
           <div style={{ lineHeight: "26px" }}>
-            {/* MÃ GIAO DỊCH */}
             <div style={{ marginBottom: 16 }}>
               <h3 style={{ marginBottom: 6 }}>Mã giao dịch</h3>
               <Card size="small">
@@ -466,7 +635,6 @@ const StaffTransactionPage = () => {
               </Card>
             </div>
 
-            {/* THÔNG TIN KHÁCH HÀNG */}
             <div style={{ marginBottom: 16 }}>
               <h3 style={{ marginBottom: 6 }}>Thông tin khách hàng</h3>
               <Card size="small">
@@ -482,7 +650,6 @@ const StaffTransactionPage = () => {
               </Card>
             </div>
 
-            {/* THÔNG TIN GÓI TẬP */}
             <div style={{ marginBottom: 16 }}>
               <h3 style={{ marginBottom: 6 }}>Thông tin gói tập</h3>
               <Card size="small">
@@ -500,7 +667,6 @@ const StaffTransactionPage = () => {
               </Card>
             </div>
 
-            {/* Membership */}
             {selectedTransaction.membershipId && (
               <div style={{ marginBottom: 16 }}>
                 <h3 style={{ marginBottom: 6 }}>Membership</h3>
@@ -527,7 +693,6 @@ const StaffTransactionPage = () => {
               </div>
             )}
 
-            {/* THÔNG TIN THANH TOÁN */}
             <div style={{ marginBottom: 16 }}>
               <h3 style={{ marginBottom: 6 }}>Thông tin thanh toán</h3>
               <Card size="small">
@@ -548,7 +713,6 @@ const StaffTransactionPage = () => {
               </Card>
             </div>
 
-            {/* THỜI GIAN HỆ THỐNG */}
             <div style={{ marginBottom: 16 }}>
               <h3 style={{ marginBottom: 6 }}>Thời gian hệ thống</h3>
               <Card size="small">
@@ -570,44 +734,7 @@ const StaffTransactionPage = () => {
         )}
       </Modal>
 
-      {/* <Modal
-        title="Cập nhật trạng thái giao dịch"
-        open={isStatusModalOpen}
-        onCancel={closeStatusModal}
-        footer={null}
-      >
-        <Form
-          layout="vertical"
-          onFinish={handleUpdateStatus}
-          initialValues={{
-            status: selectedTransaction?.status,
-            paymentMethod: selectedTransaction?.paymentMethod,
-          }}
-        >
-          <Form.Item label="Trạng thái" name="status">
-            <Select>
-              <Select.Option value="pending">Pending</Select.Option>
-              <Select.Option value="completed">Completed</Select.Option>
-              <Select.Option value="failed">Failed</Select.Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Phương thức thanh toán" name="paymentMethod">
-            <Select>
-              <Select.Option value="cash">Tiền mặt</Select.Option>
-              <Select.Option value="banking">Chuyển khoản</Select.Option>
-              <Select.Option value="momo">Momo</Select.Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item>
-            <Button type="primary" htmlType="submit" block>
-              Cập nhật
-            </Button>
-          </Form.Item>
-        </Form>
-      </Modal> */}
-
+      {/* Export Modal */}
       <Modal
         title="Xuất báo cáo giao dịch"
         open={isExportModalOpen}
@@ -615,7 +742,6 @@ const StaffTransactionPage = () => {
         footer={null}
       >
         <Form layout="vertical" onFinish={handleExportSubmit}>
-          {/* Date Range */}
           <Form.Item
             label="Khoảng thời gian"
             name="dateRange"
@@ -624,7 +750,6 @@ const StaffTransactionPage = () => {
             <RangePicker format="DD/MM/YYYY" />
           </Form.Item>
 
-          {/* Payment Method */}
           <Form.Item label="Phương thức thanh toán" name="paymentMethod">
             <Select allowClear>
               <Select.Option value="all">Tất cả</Select.Option>
@@ -636,11 +761,9 @@ const StaffTransactionPage = () => {
             </Select>
           </Form.Item>
 
-          {/* Status */}
           <Form.Item label="Trạng thái giao dịch" name="status">
             <Select allowClear>
               <Select.Option value="all">Tất cả</Select.Option>
-
               <Select.Option value="pending">Pending</Select.Option>
               <Select.Option value="completed">Completed</Select.Option>
               <Select.Option value="failed">Failed</Select.Option>
@@ -655,52 +778,24 @@ const StaffTransactionPage = () => {
         </Form>
       </Modal>
 
+      {/* Create Transaction Modal */}
       <Modal
         title="Tạo giao dịch trực tiếp"
         open={createModalVisible}
-        onCancel={() => setCreateModalVisible(false)}
+        onCancel={() => {
+          setCreateModalVisible(false);
+          formCreate.resetFields();
+          setSelectedPackage(null);
+          setSelectedTrainer(null);
+        }}
         footer={null}
       >
         <Form
           layout="vertical"
           form={formCreate}
           onFinish={async (values) => {
-            try {
-              const token = await getValidToken();
-
-              // Lấy package đang chọn
-              const selectedPkg = packages.find(
-                (p) => p._id === values.packageId
-              );
-
-              // Nếu package có trainer cố định, gán tự động
-              const trainerIdToSend =
-                selectedPkg?.type === "personal_trainer" &&
-                selectedPkg?.trainerId
-                  ? selectedPkg.trainerId
-                  : values.trainerId || null;
-
-              const res = await TransactionService.createTransactionDirect(
-                {
-                  userId: values.userId,
-                  packageId: values.packageId,
-                  trainerId: trainerIdToSend,
-                },
-                token
-              );
-
-              if (res.status === "OK") {
-                message.success(res.message);
-                queryClient.invalidateQueries(["transactions"]); // reload bảng
-                setCreateModalVisible(false);
-                formCreate.resetFields();
-              } else {
-                message.error(res.message);
-              }
-            } catch (err) {
-              console.error(err);
-              message.error("Tạo giao dịch thất bại");
-            }
+            // kept as fallback: direct create without OTP (optional)
+            await handleDirectCreateNoOtp(values);
           }}
         >
           {/* Chọn khách hàng */}
@@ -711,13 +806,14 @@ const StaffTransactionPage = () => {
           >
             <Select placeholder="Chọn khách hàng">
               {members.map((m) => (
-                <Option key={m._id} value={m._id}>
+                <Option key={m._id} value={m._1d ?? m._id}>
                   {m.fullName} - {m.email}
                 </Option>
               ))}
             </Select>
           </Form.Item>
-          {/* Chọn package */}
+
+          {/* Gói tập */}
           <Form.Item
             label="Gói tập"
             name="packageId"
@@ -730,53 +826,154 @@ const StaffTransactionPage = () => {
                 setSelectedPackage(pkg);
 
                 if (pkg?.type === "personal_trainer" && pkg?.trainerId) {
+                  // set trainer info if package has fixed trainer
                   const trainerInfo = trainers.find(
                     (t) => t._id === pkg.trainerId
                   );
                   setSelectedTrainer(trainerInfo || null);
+                  formCreate.setFieldsValue({ trainerId: pkg.trainerId });
                 } else {
                   setSelectedTrainer(null);
+                  formCreate.setFieldsValue({ trainerId: undefined });
                 }
-
-                formCreate.setFieldsValue({ trainerId: undefined });
               }}
             >
               {packages.map((p) => (
                 <Option key={p._id} value={p._id}>
-                  {p.name} - {p.price.toLocaleString()} ₫
+                  {p.name} - {p.price?.toLocaleString?.() ?? p.price} ₫
                 </Option>
               ))}
             </Select>
           </Form.Item>
 
-          {/* Hiển thị thông tin package khi chọn */}
           {selectedPackage && (
-            <Card size="small" style={{ marginBottom: 16 }}>
+            <Card
+              size="small"
+              style={{
+                background: "#fafafa",
+                borderRadius: 8,
+                marginBottom: 16,
+              }}
+            >
+              <h3>{selectedPackage.name}</h3>
               <p>
-                <b>Tên gói:</b> {selectedPackage.name}
+                <b>Mô tả:</b> {selectedPackage.description || "Không có mô tả"}
               </p>
               <p>
                 <b>Giá:</b> {selectedPackage.price.toLocaleString()} ₫
               </p>
               <p>
-                <b>Mô tả:</b> {selectedPackage.description || "Không có mô tả"}
+                <b>Loại gói:</b> {selectedPackage.type}
               </p>
-              {selectedPackage.type === "personal_trainer" &&
-                selectedPackage.trainerId && (
+              <p>
+                <b>Thời hạn:</b> {selectedPackage.durationInDays} ngày
+              </p>
+
+              {selectedPackage.type === "personal_trainer" && (
+                <>
                   <p>
-                    <b>Trainer:</b> {selectedPackage.trainerId.fullName} - ID:{" "}
-                    {selectedPackage.trainerId._id}
+                    <b>Số buổi PT:</b> {selectedPackage.sessionsWithTrainer}
                   </p>
-                )}
+
+                  {selectedPackage?.trainerId && (
+                    <p style={{ marginTop: 8, color: "#1890ff" }}>
+                      <b>Huấn luyện viên:</b>{" "}
+                      {selectedPackage.trainerId.fullName}
+                    </p>
+                  )}
+                </>
+              )}
             </Card>
           )}
-          {/* Submit */}
+
+          {/* Buttons: send OTP OR create directly */}
           <Form.Item>
-            <Button type="primary" htmlType="submit" block>
-              Tạo giao dịch trực tiếp
-            </Button>
+            <Space direction="vertical" style={{ width: "100%" }}>
+              <Button
+                type="primary"
+                block
+                onClick={handleSendOTP}
+                loading={sendingOtp}
+              >
+                Gửi mã OTP đến email khách hàng
+              </Button>
+
+              <Button
+                type="default"
+                block
+                onClick={async () => {
+                  try {
+                    const values = await formCreate.validateFields();
+                    await handleDirectCreateNoOtp(values);
+                  } catch (err) {
+                    // validation handled by form
+                  }
+                }}
+                loading={creatingDirect}
+              >
+                Tạo giao dịch trực tiếp (không cần OTP)
+              </Button>
+            </Space>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* OTP Modal */}
+      <Modal
+        title="Xác nhận mã OTP"
+        open={otpModalVisible}
+        onCancel={() => {
+          setOtpModalVisible(false);
+          setOtpCode("");
+          // keep transactionTempData in case want to retry
+        }}
+        okText="Xác nhận và tạo giao dịch"
+        confirmLoading={verifyingOtp || creatingDirect}
+        onOk={handleVerifyOTP}
+      >
+        <p>
+          Đã gửi mã OTP tới email của khách hàng. Vui lòng nhập mã OTP (5 phút
+          hiệu lực).
+        </p>
+        <Input
+          placeholder="Nhập mã OTP"
+          value={otpCode}
+          onChange={(e) => setOtpCode(e.target.value)}
+          maxLength={8}
+        />
+        <div style={{ marginTop: 8 }}>
+          <Button
+            type="link"
+            onClick={async () => {
+              // resend OTP
+              if (!transactionTempData) {
+                message.error("Không có dữ liệu giao dịch để gửi lại OTP");
+                return;
+              }
+              try {
+                setSendingOtp(true);
+                const token = await getValidToken();
+                const res = await TransactionService.sendDirectTransactionOTP(
+                  transactionTempData,
+                  token
+                );
+                if (res.status === "OK") {
+                  message.success("Đã gửi lại mã OTP");
+                } else {
+                  message.error(res.message || "Gửi lại OTP thất bại");
+                }
+              } catch (err) {
+                console.error("Resend OTP error:", err);
+                message.error("Gửi lại OTP thất bại");
+              } finally {
+                setSendingOtp(false);
+              }
+            }}
+            disabled={sendingOtp}
+          >
+            Gửi lại mã OTP
+          </Button>
+        </div>
       </Modal>
     </div>
   );

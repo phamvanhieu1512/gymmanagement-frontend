@@ -114,11 +114,41 @@ export const createTransactionDirect = async (data, access_token) => {
       `${process.env.REACT_APP_API_URL_BACKEND}/admin/create-transaction-direct`,
       data,
       {
-        params: data,
         headers: {
           token: `Bearer ${access_token}`,
         },
       }
+    );
+    return res.data;
+  } catch (error) {
+    console.log("Axios error:", error);
+    throw error;
+  }
+};
+
+export const sendDirectTransactionOTP = async (data, access_token) => {
+  try {
+    const res = await axios.post(
+      `${process.env.REACT_APP_API_URL_BACKEND}/admin/send-transaction-otp`,
+      data,
+      {
+        headers: {
+          token: `Bearer ${access_token}`,
+        },
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.log("Axios error:", error);
+    throw error;
+  }
+};
+
+export const verifyDirectTransactionOTP = async (data) => {
+  try {
+    const res = await axios.post(
+      `${process.env.REACT_APP_API_URL_BACKEND}/admin/verify-transaction-otp`,
+      data
     );
     return res.data;
   } catch (error) {

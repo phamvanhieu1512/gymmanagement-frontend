@@ -18,7 +18,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import * as TransactionService from "../../../services/Admin/TransactionService";
+// import * as TransactionService from "../../../services/Admin/TransactionService";
 import * as UserService from "../../../services/Admin/UserService";
 import * as TrainerService from "../../../services/Admin/TrainerService";
 import * as PackageService from "../../../services/Admin/PackageService";
@@ -27,7 +27,7 @@ import { getValidToken } from "../../../services/getValidToken";
 
 const { Title } = Typography;
 
-const DashboardPage = () => {
+const TrainerDashboardPage = () => {
   const [members, setMembers] = useState([]);
   const [trainers, setTrainers] = useState([]);
   const [packages, setPackages] = useState([]);
@@ -44,22 +44,22 @@ const DashboardPage = () => {
       const membersRes = await UserService.getAllMembers(token);
       const trainersRes = await TrainerService.getAllTrainers(token);
       const packagesRes = await PackageService.getAllPackages(token);
-      const transactionsRes = await TransactionService.getAllTransactions(
-        token
-      );
+      // const transactionsRes = await TransactionService.getAllTransactions(
+      //   token
+      // );
 
       const m = membersRes.data || [];
       const t = trainersRes.data || [];
       const p = packagesRes.data || [];
-      const tr = transactionsRes.data || [];
+      // const tr = transactionsRes.data || [];
 
       setMembers(m);
       setTrainers(t);
       setPackages(p);
-      setTransactions(tr);
+      // setTransactions(tr);
 
-      computeRevenueThisMonth(tr);
-      computeRevenueChart(tr);
+      // computeRevenueThisMonth(tr);
+      // computeRevenueChart(tr);
       computeMemberGrowth(m);
     };
 
@@ -123,7 +123,7 @@ const DashboardPage = () => {
   };
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: "24px" }}>
       <Title level={3} style={{ marginBottom: 24, color: "#fff" }}>
         Tổng quan hệ thống
       </Title>
@@ -238,4 +238,4 @@ const DashboardPage = () => {
   );
 };
 
-export default DashboardPage;
+export default TrainerDashboardPage;

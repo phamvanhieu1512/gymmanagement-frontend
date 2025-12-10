@@ -25,6 +25,10 @@ import MessagePageStaff from "../pages/staff/StaffMessagePage/InputMessage";
 // import MessagePageAdmin from "../pages/admin/";
 import BoxesMessageAll from "../pages/admin/MessagesAllPage/BoxesMessages";
 import MessagePageAdminAll from "../pages/admin/MessagesAllPage/InputMesaages";
+import TrainerDashboardPage from "../pages/trainer/TrainerDashboardPage/TrainerDashboardPage";
+import TrainerMemberShipPage from "../pages/trainer/TrainerMemberShipPage/TrainerMemberShipPage";
+import TrainerMemberPage from "../pages/trainer/TrainerMemberPage/TrainerMemberPage";
+import TrainerNotificationPage from "../pages/trainer/TrainerNotificationPage/TrainerNotificationPage";
 
 export const routes = [
   {
@@ -106,13 +110,6 @@ export const routes = [
     isShowMenuBarAdmin: true,
   },
 
-
-
-
-
-
-
-
   {
     path: "/admin/all-boxes",
     page: BoxesMessageAll, // Nhắn tin
@@ -123,8 +120,6 @@ export const routes = [
     page: MessagePageAdminAll, // Nhắn tin
     isShowMenuBarAdmin: true,
   },
-
-
 
   // STAFF ROUTES
   {
@@ -167,7 +162,7 @@ export const routes = [
     isShowMenuBarStaff: true,
   },
 
-  // staff 
+  // staff
   {
     path: "/staff/message-boxes",
     page: BoxesMessageStaff, // Quản lý nhắn tin
@@ -177,8 +172,36 @@ export const routes = [
   // input message staff
   {
     path: "/staff/messages",
-    page: MessagePageStaff, 
+    page: MessagePageStaff,
     isShowMenuBarStaff: true,
+  },
+
+  // TRAINER ROUTES
+
+  {
+    path: "/trainer",
+    page: TrainerDashboardPage,
+    isShowMenuBarTrainer: true,
+    isPrivate: true,
+    allowedRoles: ["trainer"],
+  },
+
+  {
+    path: "/trainer/memberships",
+    page: TrainerMemberShipPage,
+    isShowMenuBarTrainer: true,
+  },
+
+  {
+    path: "/trainer/members",
+    page: TrainerMemberPage,
+    isShowMenuBarTrainer: true,
+  },
+
+  {
+    path: "/trainer/notifications",
+    page: TrainerNotificationPage, // Quản lý nhắn tin
+    isShowMenuBarTrainer: true,
   },
 
   {

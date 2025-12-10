@@ -10,6 +10,7 @@ export default function GuestRoute({ children }) {
   if (token && user?.role) {
     if (user.role === "admin") return <Navigate to="/admin" replace />;
     if (user.role === "staff") return <Navigate to="/staff" replace />;
+    if (user.role === "trainer") return <Navigate to="/trainer" replace />;
   }
 
   return children;

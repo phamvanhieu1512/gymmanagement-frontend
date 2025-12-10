@@ -10,6 +10,7 @@ import * as UserService from "./services/Admin/UserService";
 import { updateUser } from "./redux/slides/userSlice";
 import { isJsonString } from "./utils/utils";
 import GuestRoute from "./components/GuestRoute";
+import TrainerDefaultComponent from "./components/Trainer/DefaultComponent/TrainerDefaultComponent";
 
 function App() {
   const dispatch = useDispatch();
@@ -65,6 +66,7 @@ function App() {
           let Layout = Fragment;
           if (route.isShowMenuBarAdmin) Layout = DefaultComponent;
           else if (route.isShowMenuBarStaff) Layout = StaffDefaultComponent;
+          else if (route.isShowMenuBarTrainer) Layout = TrainerDefaultComponent;
 
           // Nếu là trang login (guest only)
           if (route.isGuest) {
