@@ -203,14 +203,14 @@ const MembershipPage = () => {
         <Tag color={statusColors[status]}>{status?.toUpperCase()}</Tag>
       ),
     },
-    {
-      title: "Buổi còn lại",
-      dataIndex: "remainingSessions",
-      align: "center",
-      render: (value) => (
-        <Tag color={value > 0 ? "green" : "default"}>{value}</Tag>
-      ),
-    },
+    // {
+    //   title: "Buổi còn lại",
+    //   dataIndex: "remainingSessions",
+    //   align: "center",
+    //   render: (value) => (
+    //     <Tag color={value > 0 ? "green" : "default"}>{value}</Tag>
+    //   ),
+    // },
     {
       title: "Hành động",
       align: "center",
@@ -429,12 +429,12 @@ const MembershipPage = () => {
                   : "-"}
               </Descriptions.Item>
 
-              <Descriptions.Item label="Buổi còn lại">
+              {/* <Descriptions.Item label="Buổi còn lại">
                 {selected.remainingSessions ?? 0}
               </Descriptions.Item>
               <Descriptions.Item label="Số lần gia hạn">
                 {selected.renewalCount ?? 0}
-              </Descriptions.Item>
+              </Descriptions.Item> */}
             </Descriptions>
 
             <div style={{ height: 12 }} />

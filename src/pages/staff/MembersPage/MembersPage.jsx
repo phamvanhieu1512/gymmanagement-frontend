@@ -429,12 +429,12 @@ const MembersPage = () => {
                   : "-"}
               </Descriptions.Item>
 
-              <Descriptions.Item label="Buổi còn lại">
+              {/* <Descriptions.Item label="Buổi còn lại">
                 {selected.remainingSessions ?? 0}
               </Descriptions.Item>
               <Descriptions.Item label="Số lần gia hạn">
                 {selected.renewalCount ?? 0}
-              </Descriptions.Item>
+              </Descriptions.Item> */}
             </Descriptions>
 
             <div style={{ height: 12 }} />

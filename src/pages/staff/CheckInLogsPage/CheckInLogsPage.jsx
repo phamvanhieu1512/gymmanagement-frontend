@@ -162,12 +162,12 @@ const CheckInLogsPage = () => {
         </div>
       ),
     },
-    {
-      title: "Buổi còn lại",
-      dataIndex: "remainingSessions",
-      key: "remainingSessions",
-      render: (num) => <Tag color="blue">{num}</Tag>,
-    },
+    // {
+    //   title: "Buổi còn lại",
+    //   dataIndex: "remainingSessions",
+    //   key: "remainingSessions",
+    //   render: (num) => <Tag color="blue">{num}</Tag>,
+    // },
     {
       title: "Trainer",
       key: "trainer",
@@ -318,7 +318,7 @@ const CheckInLogsPage = () => {
         {selectedMember && (
           <div style={{ marginTop: 20 }}>
             <b>Gói tập:</b> {selectedMember.package?.name} <br />
-            <b>Buổi còn lại:</b> {selectedMember.remainingSessions} <br />
+            {/* <b>Buổi còn lại:</b> {selectedMember.remainingSessions} <br /> */}
             <b>Hết hạn:</b> {dayjs(selectedMember.endDate).format("DD/MM/YYYY")}
           </div>
         )}
